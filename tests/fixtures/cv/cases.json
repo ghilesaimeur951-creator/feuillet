@@ -1,0 +1,273 @@
+[
+  {
+    "name": "white-on-dark",
+    "file": "white-on-dark.png",
+    "corners": [
+      [
+        126.0,
+        45.0
+      ],
+      [
+        351.0,
+        57.0
+      ],
+      [
+        369.0,
+        324.0
+      ],
+      [
+        108.0,
+        315.0
+      ]
+    ],
+    "expect": "detect",
+    "note": "feuille blanche sur table sombre"
+  },
+  {
+    "name": "white-on-light",
+    "file": "white-on-light.png",
+    "corners": [
+      [
+        129.0,
+        42.0
+      ],
+      [
+        345.0,
+        51.0
+      ],
+      [
+        357.0,
+        318.0
+      ],
+      [
+        114.0,
+        309.0
+      ]
+    ],
+    "expect": "detect",
+    "note": "feuille sur table claire (faible contraste)"
+  },
+  {
+    "name": "tilted",
+    "file": "tilted.png",
+    "corners": [
+      [
+        163.81,
+        31.21
+      ],
+      [
+        359.37,
+        62.19
+      ],
+      [
+        316.19,
+        334.79
+      ],
+      [
+        120.63,
+        303.81
+      ]
+    ],
+    "expect": "detect",
+    "note": "document incliné"
+  },
+  {
+    "name": "strong-perspective",
+    "file": "strong-perspective.png",
+    "corners": [
+      [
+        168.0,
+        78.0
+      ],
+      [
+        318.0,
+        75.0
+      ],
+      [
+        426.0,
+        333.0
+      ],
+      [
+        57.0,
+        339.0
+      ]
+    ],
+    "expect": "detect",
+    "note": "forte perspective"
+  },
+  {
+    "name": "shadow",
+    "file": "shadow.png",
+    "corners": [
+      [
+        126.0,
+        45.0
+      ],
+      [
+        351.0,
+        57.0
+      ],
+      [
+        369.0,
+        324.0
+      ],
+      [
+        108.0,
+        315.0
+      ]
+    ],
+    "expect": "detect",
+    "note": "ombre sur la feuille"
+  },
+  {
+    "name": "partial",
+    "file": "partial.png",
+    "corners": [
+      [
+        150.0,
+        -36.0
+      ],
+      [
+        375.0,
+        -18.0
+      ],
+      [
+        378.0,
+        270.0
+      ],
+      [
+        141.0,
+        264.0
+      ]
+    ],
+    "expect": "partial-or-none",
+    "note": "document partiellement hors cadre"
+  },
+  {
+    "name": "a4-frontal",
+    "file": "a4-frontal.png",
+    "corners": [
+      [
+        150.0,
+        33.0
+      ],
+      [
+        330.0,
+        33.0
+      ],
+      [
+        330.0,
+        287.7
+      ],
+      [
+        150.0,
+        287.7
+      ]
+    ],
+    "expect": "detect",
+    "note": "feuille A4 de face"
+  },
+  {
+    "name": "receipt",
+    "file": "receipt.png",
+    "corners": [
+      [
+        207.0,
+        33.0
+      ],
+      [
+        279.0,
+        37.5
+      ],
+      [
+        274.5,
+        333.0
+      ],
+      [
+        204.0,
+        328.5
+      ]
+    ],
+    "expect": "detect",
+    "note": "reçu étroit"
+  },
+  {
+    "name": "book-page",
+    "file": "book-page.png",
+    "corners": [
+      [
+        141.0,
+        36.0
+      ],
+      [
+        354.0,
+        45.0
+      ],
+      [
+        360.0,
+        330.0
+      ],
+      [
+        132.0,
+        324.0
+      ]
+    ],
+    "expect": "detect",
+    "note": "page de livre (teinte crème, ombre de reliure)"
+  },
+  {
+    "name": "low-light",
+    "file": "low-light.png",
+    "corners": [
+      [
+        126.0,
+        45.0
+      ],
+      [
+        351.0,
+        57.0
+      ],
+      [
+        369.0,
+        324.0
+      ],
+      [
+        108.0,
+        315.0
+      ]
+    ],
+    "expect": "detect",
+    "note": "faible luminosité"
+  },
+  {
+    "name": "multiple-rectangles",
+    "file": "multiple-rectangles.png",
+    "corners": [
+      [
+        156.0,
+        36.0
+      ],
+      [
+        369.0,
+        48.0
+      ],
+      [
+        375.0,
+        327.0
+      ],
+      [
+        144.0,
+        318.0
+      ]
+    ],
+    "expect": "detect",
+    "note": "plusieurs rectangles visibles"
+  },
+  {
+    "name": "no-document",
+    "file": "no-document.png",
+    "corners": null,
+    "expect": "none",
+    "note": "aucun document"
+  }
+]
