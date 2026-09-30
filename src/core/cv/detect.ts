@@ -234,6 +234,105 @@ export function scoreQuad(
   };
 }
 
+function sampleMag(mag: Float32Array, w: number, h: number, x: number, y: number): number {
+  if (x < 1 || y < 1 || x >= w - 2 || y >= h - 2) return 0;
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  const ax = x - x0;
+  const ay = y - y0;
+  const i = y0 * w + x0;
+  return (
+    (mag[i] as number) * (1 - ax) * (1 - ay) +
+    (mag[i + 1] as number) * ax * (1 - ay) +
+    (mag[i + w] as number) * (1 - ax) * ay +
+    (mag[i + w + 1] as number) * ax * ay
+  );
+}
+
+/**
+ * Sub-pixel refinement: for each side, finds the gradient maximum along the side's normal
+ * (parabolic interpolation), fits a robust line through these edge points and intersects
+ * consecutive sides. Sides lying on the frame border are left untouched.
+ */
+export function refineSubpixel(q: Quad, mag: Float32Array, w: number, h: number): Quad {
+  const diag = Math.hypot(w, h);
+  const tol = Math.max(3, Math.round(diag * 0.008));
+  const lines: Array<{ point: Point; dir: Point } | null> = [];
+  for (let s = 0; s < 4; s++) {
+    const a = q[s] as Point;
+    const b = q[(s + 1) % 4] as Point;
+    const len = distance(a, b);
+    if (len < 8 || isBorderSide(a, b, w, h)) {
+      lines.push(null);
+      continue;
+    }
+    const ux = (b.x - a.x) / len;
+    const uy = (b.y - a.y) / len;
+    const nx = -uy;
+    const ny = ux;
+    const pts: Point[] = [];
+    const vals: number[] = [];
+    const steps = Math.max(10, Math.floor(len));
+    for (let k = 0; k <= steps; k++) {
+      const t = 0.1 + (0.8 * k) / steps;
+      const px = a.x + (b.x - a.x) * t;
+      const py = a.y + (b.y - a.y) * t;
+      let bestO = 0;
+      let bestV = -1;
+      for (let o = -tol; o <= tol; o++) {
+        const v = sampleMag(mag, w, h, px + nx * o, py + ny * o);
+        if (v > bestV) {
+          bestV = v;
+          bestO = o;
+        }
+      }
+      if (bestV <= 0 || Math.abs(bestO) === tol) continue;
+      const vm = sampleMag(mag, w, h, px + nx * (bestO - 1), py + ny * (bestO - 1));
+      const vp = sampleMag(mag, w, h, px + nx * (bestO + 1), py + ny * (bestO + 1));
+      const den = vm - 2 * bestV + vp;
+      const delta = den < 0 ? Math.max(-0.5, Math.min(0.5, (0.5 * (vm - vp)) / den)) : 0;
+      pts.push({ x: px + nx * (bestO + delta), y: py + ny * (bestO + delta) });
+      vals.push(bestV);
+    }
+    // Keep strong responses only (ignore text or clutter touching the border).
+    const sorted = vals.slice().sort((x, y) => x - y);
+    const median = sorted[sorted.length >> 1] ?? 0;
+    let kept = pts.filter((_, i) => (vals[i] as number) >= median * 0.5);
+    if (kept.length < 8) {
+      lines.push(null);
+      continue;
+    }
+    let line = fitLine(kept);
+    // One pass of outlier rejection.
+    if (line) {
+      const l = line;
+      const res = (p: Point) => Math.abs((p.x - l.point.x) * -l.dir.y + (p.y - l.point.y) * l.dir.x);
+      const inliers = kept.filter((p) => res(p) < 1.5);
+      if (inliers.length >= Math.max(8, kept.length * 0.5)) {
+        kept = inliers;
+        line = fitLine(kept);
+      }
+    }
+    lines.push(line);
+  }
+  const out: Point[] = [];
+  for (let c = 0; c < 4; c++) {
+    const prev = lines[(c + 3) % 4];
+    const next = lines[c];
+    const original = q[c] as Point;
+    if (!prev || !next) {
+      out.push(original);
+      continue;
+    }
+    const p = lineIntersection(prev.point, { x: prev.point.x + prev.dir.x, y: prev.point.y + prev.dir.y }, next.point, {
+      x: next.point.x + next.dir.x,
+      y: next.point.y + next.dir.y,
+    });
+    out.push(p && distance(p, original) < diag * 0.02 ? p : original);
+  }
+  return orderQuad(out);
+}
+
 function candidateFromComponent(comp: Component, diag: number): { quad: Quad; hullArea: number } | null {
   if (comp.outline.length < 4) return null;
   const hull = convexHull(comp.outline);
@@ -262,38 +361,42 @@ export function detectDocument(gray: GrayImage, options: DetectOptions = {}): De
   const { width: w, height: h } = gray;
   const diag = Math.hypot(w, h);
   const blurred = gaussianBlur(gray, opts.blurSigma);
-  const { edges } = canny(blurred, { highQuantile: 0.88, minHigh: 36, maxHigh: 300, lowRatio: 0.4 });
-  const closed = dilate(edges, 1);
-  const edgeTol = dilate(edges, 2);
+  const t = otsuThreshold(histogram(blurred));
 
-  const candidates: Candidate[] = [];
-  const consider = (comp: Component, source: Candidate['source']) => {
-    const c = candidateFromComponent(comp, diag);
-    if (!c) return;
-    const s = scoreQuad(c.quad, c.hullArea, edgeTol, blurred, opts.minAreaRatio);
-    if (!s) return;
-    candidates.push({ quad: c.quad, source, score: s.score, partial: s.partial });
+  const runPass = (cannyOpts: { highQuantile: number; minHigh: number }) => {
+    const { edges, gradient } = canny(blurred, { ...cannyOpts, maxHigh: 300, lowRatio: 0.4 });
+    const closed = dilate(edges, 1);
+    const edgeTol = dilate(edges, 2);
+    const found: Candidate[] = [];
+    const consider = (comp: Component, source: Candidate['source']) => {
+      const c = candidateFromComponent(comp, diag);
+      if (!c) return;
+      const sc = scoreQuad(c.quad, c.hullArea, edgeTol, blurred, opts.minAreaRatio);
+      if (!sc) return;
+      found.push({ quad: c.quad, source, score: sc.score, partial: sc.partial });
+    };
+    for (const comp of findComponents(closed, { minBoxAreaRatio: opts.minAreaRatio * 0.8, maxComponents: 10 })) consider(comp, 'edges');
+    // Segmentation generator: bright (paper on dark) and dark (dark card on light) regions.
+    const bright = erode(dilate(threshold(blurred, t), 1), 1);
+    for (const comp of findComponents(erode(bright, 1), { minBoxAreaRatio: opts.minAreaRatio, maxComponents: 4 })) consider(comp, 'bright');
+    const dark = erode(threshold(blurred, t, true), 1);
+    for (const comp of findComponents(dark, { minBoxAreaRatio: opts.minAreaRatio, maxComponents: 3 })) {
+      if (!comp.touchesBorder) consider(comp, 'dark');
+    }
+    found.sort((a, b) => b.score.total - a.score.total);
+    return { found, gradient };
   };
 
-  for (const comp of findComponents(closed, { minBoxAreaRatio: opts.minAreaRatio * 0.8, maxComponents: 10 })) {
-    consider(comp, 'edges');
+  // Adaptive thresholds; a second, more sensitive pass handles low-contrast scenes
+  // (light paper on a light or textured table) when the first one finds nothing reliable.
+  let pass = runPass({ highQuantile: 0.88, minHigh: 36 });
+  if (!pass.found[0] || pass.found[0].score.total < opts.minScore) {
+    const retry = runPass({ highQuantile: 0.72, minHigh: 18 });
+    if (retry.found[0] && retry.found[0].score.total > (pass.found[0]?.score.total ?? 0)) pass = retry;
   }
-
-  // Segmentation generator: bright (paper on dark) and dark (dark card on light) regions.
-  const t = otsuThreshold(histogram(blurred));
-  const bright = erode(dilate(threshold(blurred, t), 1), 1);
-  for (const comp of findComponents(erode(bright, 1), { minBoxAreaRatio: opts.minAreaRatio, maxComponents: 4 })) {
-    consider(comp, 'bright');
-  }
-  const dark = erode(threshold(blurred, t, true), 1);
-  for (const comp of findComponents(dark, { minBoxAreaRatio: opts.minAreaRatio, maxComponents: 3 })) {
-    if (comp.touchesBorder) continue;
-    consider(comp, 'dark');
-  }
-
-  candidates.sort((a, b) => b.score.total - a.score.total);
+  const candidates = pass.found;
   const best = candidates[0];
-  const accepted = best && best.score.total >= opts.minScore ? best : null;
+  const accepted = best && best.score.total >= opts.minScore ? { ...best, quad: refineSubpixel(best.quad, pass.gradient.magnitude, w, h) } : null;
   const elapsed = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0;
   return {
     quad: accepted ? accepted.quad : null,

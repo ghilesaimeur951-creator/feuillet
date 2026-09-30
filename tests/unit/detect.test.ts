@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { detectDocument } from '../../src/core/cv/detect';
 import type { Quad } from '../../src/core/geometry/geometry';
@@ -38,9 +39,34 @@ describe('détection de document sur scènes synthétiques (section 31)', () => 
       }
       expect(r.quad).not.toBeNull();
       const err = maxError(r.quad as Quad, c.corners as [number, number][]);
-      // Every corner within 2 % of the frame diagonal (≈ 12 px on a 480×360 frame).
-      expect(err).toBeLessThan(diag * 0.02);
+      // Every corner within 0.6 % of the frame diagonal (≈ 3.6 px on a 480×360 frame; sub-pixel refinement gives ≈ 1 px).
+      expect(err).toBeLessThan(diag * 0.006);
       expect(r.partial).toBe(false);
     });
   }
+});
+
+describe('comparaison avec la chaîne OpenCV classique', () => {
+  test('précision des coins au moins équivalente à OpenCV (Canny + findContours + approxPolyDP)', () => {
+    const r = spawnSync('python3', [join(import.meta.dir, '..', '..', 'scripts', 'opencv_baseline.py')], { encoding: 'utf8' });
+    if (r.status !== 0) return; // OpenCV (python3-opencv) not installed: comparison skipped.
+    const baseline = r.stdout
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l) as { name: string; found: boolean; maxError: number | null });
+    let ours = 0;
+    let theirs = 0;
+    let n = 0;
+    for (const c of cases) {
+      const b = baseline.find((x) => x.name === c.name);
+      if (!b || b.maxError === null || c.expect !== 'detect') continue;
+      const q = detectDocument(toGray(readPng(join(DIR, c.file)))).quad;
+      if (!q) continue;
+      ours += maxError(q, c.corners as [number, number][]);
+      theirs += b.maxError;
+      n++;
+    }
+    expect(n).toBeGreaterThan(8);
+    expect(ours / n).toBeLessThanOrEqual(theirs / n);
+  });
 });
