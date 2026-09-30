@@ -543,6 +543,22 @@
   padding: 0 10px 8px;
 }
 
+.editor-tabs .segmented {
+  width: min(100%, 520px);
+}
+
+.editor-tabs .segmented button {
+  flex: 1;
+  justify-content: center;
+  padding: 8px 6px;
+}
+
+@media (max-width: 420px) {
+  .editor-tabs .segmented button svg {
+    display: none;
+  }
+}
+
 .page-editor .segmented {
   background: #1e2731;
 }
@@ -570,6 +586,18 @@
   place-items: center;
   padding: 8px 12px;
   overflow: hidden;
+}
+
+.editor-stage {
+  position: relative;
+}
+
+.editor-stage > .preview-img {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  max-width: calc(100% - 24px);
+  max-height: calc(100% - 16px);
 }
 
 .preview-img {
@@ -615,6 +643,9 @@
   .editor-split {
     flex-direction: row;
   }
+  .editor-panel .filter-chips {
+    flex-wrap: wrap;
+  }
   .editor-panel {
     width: 380px;
     max-height: none;
@@ -643,10 +674,12 @@
   padding: 4px;
   border-radius: 12px;
   cursor: pointer;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-2);
-  min-width: 64px;
+  min-width: 74px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .filter-chip.is-active {

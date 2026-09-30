@@ -211,3 +211,59 @@ test.describe('organisation', () => {
     }
   });
 });
+
+test.describe('édition et exports', () => {
+  test('signature dessinée insérée sur une page, exports Word, JPG et PDF protégé', async ({ page }) => {
+    await freshApp(page);
+    const chooser = page.waitForEvent('filechooser');
+    await page.getByRole('button', { name: 'Importer des fichiers' }).first().click();
+    await (await chooser).setFiles([join(FIX, 'office', 'sample.docx')]);
+    await expect(page).toHaveURL(/#\/doc\//, { timeout: 30_000 });
+    const thumbBefore = await page.locator('.page-grid .page-thumb img').first().getAttribute('src');
+
+    // Draw a signature and place it on the page.
+    await page.locator('.page-grid .page-btn').first().click();
+    await page.getByRole('menuitem', { name: 'Annoter / signer' }).click();
+    await page.getByRole('button', { name: 'Signature' }).click();
+    await page.getByRole('radio', { name: 'Dessiner' }).click();
+    const pad = page.locator('canvas.sig-pad');
+    const box = await pad.boundingBox();
+    if (!box) throw new Error('zone de signature introuvable');
+    await page.mouse.move(box.x + 30, box.y + box.height * 0.6);
+    await page.mouse.down();
+    for (let i = 0; i <= 20; i++) await page.mouse.move(box.x + 30 + i * 12, box.y + box.height * (0.6 - 0.25 * Math.sin(i / 2)));
+    await page.mouse.up();
+    await page.getByRole('button', { name: 'Utiliser' }).click();
+    await expect(page.locator('.annot-svg image')).toHaveCount(1);
+    await page.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(page).toHaveURL(/#\/doc\/[^/]+$/);
+    await expect.poll(async () => page.locator('.page-grid .page-thumb img').first().getAttribute('src')).not.toBe(thumbBefore);
+
+    const fs = await import('node:fs');
+    const exportAs = async (format: string, setup?: () => Promise<void>) => {
+      await page.getByTestId('export-open').click();
+      await page.getByRole('radio', { name: format, exact: true }).click();
+      if (setup) await setup();
+      const [dl] = await Promise.all([page.waitForEvent('download'), page.getByTestId('export-download').click()]);
+      return { name: dl.suggestedFilename(), bytes: fs.readFileSync((await dl.path()) as string) };
+    };
+
+    const docx = await exportAs('Word');
+    expect(docx.name).toMatch(/\.docx$/);
+    expect(new TextDecoder('latin1').decode(docx.bytes.subarray(0, 2))).toBe('PK');
+    expect(new TextDecoder('latin1').decode(docx.bytes)).toContain('word/document.xml');
+
+    const jpg = await exportAs('JPG');
+    expect(jpg.name).toMatch(/\.jpg$/);
+    expect([jpg.bytes[0], jpg.bytes[1]]).toEqual([0xff, 0xd8]);
+
+    const pdf = await exportAs('PDF', async () => {
+      await page.getByText('Protéger par mot de passe').click();
+      await page.getByLabel('Mot de passe', { exact: true }).fill('secret-1234');
+    });
+    const text = new TextDecoder('latin1').decode(pdf.bytes);
+    expect(text).toContain('/Encrypt');
+    expect(text).toContain('/V 5 /R 6');
+    expect(text).not.toContain('Rapport trimestriel');
+  });
+});

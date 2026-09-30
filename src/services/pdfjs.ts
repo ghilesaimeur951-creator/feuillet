@@ -124,6 +124,8 @@ export async function renderPdf(
       let line = '';
       for (const it of tc.items) {
         if (!('str' in it) || !it.str) continue;
+        // Symbol-font bullets come out as private-use code points.
+        it.str = it.str.replace(/[\uE000-\uF8FF]/g, '•');
         const t = pdfjs.Util.transform(vp.transform, it.transform);
         const fontH = Math.hypot(t[2] as number, t[3] as number);
         const x = t[4] as number;

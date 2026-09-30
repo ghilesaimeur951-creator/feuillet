@@ -67,6 +67,8 @@ describe('analyse OCR', () => {
     expect(classifyDocument(RECEIPT).kind).toBe('recu');
     expect(classifyDocument('CONTRAT DE BAIL\nEntre les soussignés\nArticle 1 - Objet\nFait en deux exemplaires').kind).toBe('contrat');
     expect(classifyDocument('Bonjour le monde').kind).toBeNull();
+    // A document that merely mentions an invoice is not an invoice.
+    expect(classifyDocument('Rapport trimestriel\nCeci est un paragraphe avec une facture EDF.\nConclusion').kind).toBeNull();
   });
 
   test('extraction structurée d’une facture', () => {

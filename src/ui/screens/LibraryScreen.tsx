@@ -62,6 +62,7 @@ export function LibraryScreen({ view }: { view: string }) {
       <header class="top-bar">
         <Logo />
         <IconButton icon="upload" label="Importer des fichiers" onClick={() => openImportPicker()} />
+        <IconButton icon="settings" label="Paramètres" class="hide-desktop" onClick={() => navigate('/settings')} />
         <IconButton
           icon={s.viewMode === 'grid' ? 'list' : 'grid'}
           label={s.viewMode === 'grid' ? 'Affichage en liste' : 'Affichage en grille'}

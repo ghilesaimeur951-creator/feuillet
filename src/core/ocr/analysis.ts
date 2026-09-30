@@ -157,16 +157,19 @@ export function classifyDocument(text: string): { kind: DocumentKind | null; sco
       const count = (n.match(re) ?? []).length;
       if (count) s += (w.includes(' ') ? 2 : 1) * Math.min(3, count);
     }
-    // The document's own name in the first lines is strong evidence.
-    const head = normalize(text.split('\n').slice(0, 6).join(' '));
-    if (words[0] && new RegExp(`\\b${words[0]}\\b`).test(head)) s += 3;
+    // A line of the header starting with the document's own name ("FACTURE N° …") is strong evidence.
+    const head = text
+      .split('\n')
+      .slice(0, 8)
+      .map((l) => normalize(l));
+    if (words[0] && head.some((l) => l.startsWith(`${words[0]} `) || l === words[0])) s += 3;
     scores[kind] = s;
     if (s > bestScore) {
       bestScore = s;
       best = kind;
     }
   }
-  return { kind: bestScore >= 3 ? best : null, scores };
+  return { kind: bestScore >= 4 ? best : null, scores };
 }
 
 export interface InvoiceData {

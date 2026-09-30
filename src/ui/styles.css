@@ -294,8 +294,9 @@ a {
     color: var(--primary);
     font-weight: 600;
   }
-  .bottom-nav {
-    display: none;
+  .bottom-nav,
+  .hide-desktop {
+    display: none !important;
   }
   .main {
     padding-bottom: 32px;
@@ -565,6 +566,14 @@ textarea.text-input {
   flex: 1;
 }
 
+.search-field > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .search-field input {
   border: 0;
   background: transparent;
@@ -613,6 +622,11 @@ textarea.text-input {
   border-radius: 12px;
   background: var(--surface-2);
   gap: 2px;
+}
+
+.sheet .segmented {
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .segmented button {
