@@ -267,3 +267,18 @@ test.describe('édition et exports', () => {
     expect(text).not.toContain('Rapport trimestriel');
   });
 });
+
+test.describe('OCR', () => {
+  test('page importée à l’envers : orientation corrigée automatiquement par l’OCR', async ({ page }) => {
+    await freshApp(page);
+    const chooser = page.waitForEvent('filechooser');
+    await page.getByRole('button', { name: 'Importer des fichiers' }).first().click();
+    await (await chooser).setFiles([join(FIX, 'ocr', 'invoice-upside-down.jpg')]);
+    await expect(page).toHaveURL(/#\/doc\//, { timeout: 30_000 });
+    await page.getByRole('button', { name: 'OCR', exact: true }).click();
+    await expect(page.getByText('OCR 1/1')).toBeVisible({ timeout: 90_000 });
+    await page.goto('/#/search?q=electricite%20regler%20echeance');
+    await expect(page.locator('.doc-row')).toHaveCount(1);
+    await expect(page.locator('.snippet')).toContainText('ELECTRICITE');
+  });
+});

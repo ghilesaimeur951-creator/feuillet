@@ -1,5 +1,15 @@
 import { describe, expect, test } from 'bun:test';
-import { addPages, duplicatePage, movePage, removePages, replacePage, rotatePage, setFilter, UndoStack } from '../../src/core/docs/pages';
+import {
+  addPages,
+  duplicatePage,
+  mergeConcurrentPage,
+  movePage,
+  removePages,
+  replacePage,
+  rotatePage,
+  setFilter,
+  UndoStack,
+} from '../../src/core/docs/pages';
 import type { Folder, Page } from '../../src/core/docs/model';
 import { folderPath, isDescendantFolder, newId } from '../../src/core/docs/model';
 import { NEUTRAL_ADJUSTMENTS } from '../../src/core/imaging/filters';
@@ -65,6 +75,15 @@ describe('opérations sur les pages', () => {
   test('filtre sur une page ou sur toutes', () => {
     expect(setFilter(pages, ['b'], 'bw').map((p) => p.filter)).toEqual(['original', 'bw', 'original']);
     expect(setFilter(pages, 'all', 'document').every((p) => p.filter === 'document')).toBe(true);
+  });
+
+  test('fusion avec une version plus récente : l’OCR obtenu entre-temps est conservé', () => {
+    const latest = { ...page('a'), ocr: { text: 'x', words: [], confidence: 90, language: 'fra', width: 100, height: 200, createdAt: 1 } };
+    const edited = { ...page('a'), filter: 'bw' as const, processedBlobId: 'new' };
+    expect(mergeConcurrentPage(latest, edited).ocr?.text).toBe('x');
+    expect(mergeConcurrentPage(latest, edited).filter).toBe('bw');
+    // A geometry change invalidates the recognised word positions.
+    expect(mergeConcurrentPage(latest, { ...edited, rotation: 1 }).ocr).toBeUndefined();
   });
 
   test('annuler / rétablir', () => {

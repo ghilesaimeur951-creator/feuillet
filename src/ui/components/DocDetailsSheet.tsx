@@ -123,11 +123,17 @@ export function DocDetailsSheet({ doc, open, onClose }: { doc: DocumentRecord; o
           value={doc.kind ?? ''}
           onChange={async (e) => {
             const v = (e.target as HTMLSelectElement).value as DocumentKind | '';
-            const next = { ...doc };
-            if (v) next.kind = v;
-            else delete next.kind;
             try {
-              await lib.saveDocument(next, null);
+              await lib.updateDocument(
+                doc.id,
+                (latest) => {
+                  const next = { ...latest };
+                  if (v) next.kind = v;
+                  else delete next.kind;
+                  return next;
+                },
+                null,
+              );
             } catch (err) {
               toast(errorMessage(err), 'error');
             }

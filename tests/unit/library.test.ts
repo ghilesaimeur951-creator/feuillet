@@ -156,6 +156,25 @@ describe('bibliothèque et stockage', () => {
     await expect(other.importBackup(new Uint8Array([1, 2, 3]))).rejects.toThrow();
   });
 
+  test('écritures concurrentes sérialisées : aucune mise à jour perdue', async () => {
+    const d = await lib.createDocument({ title: 'Concurrence', source: 'scan', pages: [await makePage(lib), await makePage(lib)] });
+    const [p1, p2] = d.pages as [Page, Page];
+    // Background OCR and a user edit started at the same time, each changing a different page.
+    const slowOcr = lib.updateDocument(d.id, async (latest) => {
+      await new Promise((r) => setTimeout(r, 20));
+      return { ...latest, pages: latest.pages.map((p) => (p.id === p1.id ? { ...p, text: 'texte OCR' } : p)) };
+    });
+    const edit = lib.updateDocument(d.id, (latest) => ({
+      ...latest,
+      pages: latest.pages.map((p) => (p.id === p2.id ? { ...p, filter: 'bw' as const } : p)),
+    }));
+    await Promise.all([slowOcr, edit]);
+    const final = lib.get(d.id) as DocumentRecord;
+    expect(final.pages[0]?.text).toBe('texte OCR');
+    expect(final.pages[1]?.filter).toBe('bw');
+    expect(final.revision).toBe(d.revision + 2);
+  });
+
   test('paramètres persistants', async () => {
     expect(await lib.getSetting('theme', 'system')).toBe('system');
     await lib.setSetting('theme', 'dark');

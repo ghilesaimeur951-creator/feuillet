@@ -216,31 +216,55 @@ export class Library {
   }
 
   /** Persists a modified document (new revision). */
+  /** Per-document write queue: updates are applied one after the other on the latest version. */
+  private writes = new Map<string, Promise<unknown>>();
+
+  /**
+   * Applies `fn` to the latest version of a document and persists the result. Writes to the same
+   * document are serialised, so concurrent edits (e.g. background OCR while the user changes a
+   * filter) never overwrite each other.
+   */
+  updateDocument(
+    id: string,
+    fn: (latest: DocumentRecord) => DocumentRecord | Promise<DocumentRecord>,
+    action: HistoryAction | null = 'modified',
+    detail?: string,
+    touch = true,
+  ): Promise<DocumentRecord> {
+    const prev = this.writes.get(id) ?? Promise.resolve();
+    const run = async (): Promise<DocumentRecord> => {
+      const latest = this.docs.get(id);
+      if (!latest) throw new Error('Document introuvable');
+      const changed = await fn(latest);
+      const next: DocumentRecord = touch ? { ...changed, id, updatedAt: Date.now(), revision: latest.revision + 1 } : { ...changed, id };
+      next.sizeBytes = await this.computeSize(next);
+      await this.adapter.documents.put(next);
+      this.docs.set(id, next);
+      this.indexDoc(next);
+      if (action) await this.log(action, next, detail);
+      this.emit();
+      return next;
+    };
+    const p = prev.then(run, run);
+    this.writes.set(
+      id,
+      p.catch(() => undefined),
+    );
+    return p;
+  }
+
+  /** Replaces a document by the given version (prefer `updateDocument` for partial changes). */
   async saveDocument(doc: DocumentRecord, action: HistoryAction | null = 'modified', detail?: string): Promise<DocumentRecord> {
-    const next: DocumentRecord = { ...doc, updatedAt: Date.now(), revision: (this.docs.get(doc.id)?.revision ?? doc.revision) + 1 };
-    next.sizeBytes = await this.computeSize(next);
-    await this.adapter.documents.put(next);
-    this.docs.set(next.id, next);
-    this.indexDoc(next);
-    if (action) await this.log(action, next, detail);
-    this.emit();
-    return next;
+    return this.updateDocument(doc.id, () => doc, action, detail);
   }
 
   private async patch(id: string, fn: (d: DocumentRecord) => DocumentRecord, action: HistoryAction | null, detail?: string): Promise<DocumentRecord> {
-    const d = this.docs.get(id);
-    if (!d) throw new Error('Document introuvable');
-    return this.saveDocument(fn(d), action, detail);
+    return this.updateDocument(id, fn, action, detail);
   }
 
   async markOpened(id: string): Promise<void> {
-    const d = this.docs.get(id);
-    if (!d) return;
-    const next = { ...d, openedAt: Date.now() };
-    this.docs.set(id, next);
-    await this.adapter.documents.put(next);
-    await this.log('opened', next);
-    this.emit();
+    if (!this.docs.has(id)) return;
+    await this.updateDocument(id, (d) => ({ ...d, openedAt: Date.now() }), 'opened', undefined, false);
   }
 
   async rename(id: string, title: string): Promise<DocumentRecord> {
@@ -310,11 +334,7 @@ export class Library {
     for (const id of ids) {
       const d = this.docs.get(id);
       if (!d || d.deletedAt !== undefined) continue;
-      const next = { ...d, deletedAt: now };
-      this.docs.set(id, next);
-      await this.adapter.documents.put(next);
-      this.index.remove(id);
-      await this.log('deleted', next);
+      await this.updateDocument(id, (latest) => ({ ...latest, deletedAt: now }), 'deleted', undefined, false);
     }
     this.emit();
   }
@@ -323,20 +343,24 @@ export class Library {
     for (const id of ids) {
       const d = this.docs.get(id);
       if (!d || d.deletedAt === undefined) continue;
-      const { deletedAt: _deleted, ...rest } = d;
-      void _deleted;
       // If its folder no longer exists (or is in the trash), restore it too or fall back to the root.
-      let folderId = rest.folderId;
+      let folderId = d.folderId;
       if (folderId) {
         const f = this.folderMap.get(folderId);
         if (!f) folderId = null;
         else if (f.deletedAt !== undefined) await this.restoreFolder(f.id, false);
       }
-      const next: DocumentRecord = { ...rest, folderId };
-      this.docs.set(id, next);
-      await this.adapter.documents.put(next);
-      this.indexDoc(next);
-      await this.log('restored', next);
+      await this.updateDocument(
+        id,
+        (latest) => {
+          const { deletedAt: _deleted, ...rest } = latest;
+          void _deleted;
+          return { ...rest, folderId };
+        },
+        'restored',
+        undefined,
+        false,
+      );
     }
     this.emit();
   }

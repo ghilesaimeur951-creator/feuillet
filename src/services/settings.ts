@@ -9,6 +9,7 @@ export interface Settings {
   autoCapture: boolean;
   autoOcr: boolean;
   autoName: boolean;
+  autoOrient: boolean;
   ocrLanguages: string[];
   exportPageSize: PageSizeId;
   exportOrientation: OrientationId;
@@ -30,6 +31,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoCapture: true,
   autoOcr: true,
   autoName: true,
+  autoOrient: true,
   ocrLanguages: ['fra', 'eng'],
   exportPageSize: 'A4',
   exportOrientation: 'auto',

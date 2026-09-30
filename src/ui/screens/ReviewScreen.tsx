@@ -56,10 +56,20 @@ async function finalizeSession(session: ScanSession, progress: (v: number, label
   const existing = target.docId ? lib.get(target.docId) : undefined;
   if (existing && target.replacePageId) {
     const replacement = pages[0] as Page;
-    pages = existing.pages.map((p) => (p.id === target.replacePageId ? replacement : p));
-    doc = await lib.saveDocument({ ...existing, pages }, 'modified', 'Page rescannée');
+    doc = await lib.updateDocument(
+      existing.id,
+      (latest) => ({ ...latest, pages: latest.pages.map((p) => (p.id === target.replacePageId ? replacement : p)) }),
+      'modified',
+      'Page rescannée',
+    );
   } else if (existing) {
-    doc = await lib.saveDocument({ ...existing, pages: [...existing.pages, ...pages] }, 'modified', `${pages.length} page(s) ajoutée(s)`);
+    const added = pages;
+    doc = await lib.updateDocument(
+      existing.id,
+      (latest) => ({ ...latest, pages: [...latest.pages, ...added] }),
+      'modified',
+      `${added.length} page(s) ajoutée(s)`,
+    );
   } else {
     doc = await lib.createDocument({ title: scanTitle(), pages, source: 'scan', folderId: target.folderId ?? null });
   }

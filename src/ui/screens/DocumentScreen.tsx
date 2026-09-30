@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { DocumentRecord, Page } from '../../core/docs/model';
 import { KIND_LABELS } from '../../core/ocr/analysis';
-import { movePage, removePages, rotatePage, setFilter, UndoStack } from '../../core/docs/pages';
+import { mergeConcurrentPage, movePage, removePages, rotatePage, setFilter, UndoStack } from '../../core/docs/pages';
 import { FILTERS } from '../../core/imaging/filters';
 import type { FilterId } from '../../core/imaging/filters';
 import { moveFlow, ocrFlow, renameFlow, scanTo, trashWithUndo } from '../../app/actions';
@@ -84,14 +84,27 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
 
   /** Applies a page-list change: saves the document and records it for undo. */
   const commit = async (pages: Page[], detail?: string, record = true): Promise<DocumentRecord | undefined> => {
-    const current = library().get(id);
-    if (!current) return undefined;
+    if (!library().get(id)) return undefined;
+    const snapshot = new Map(doc.pages.map((p) => [p.id, p]));
+    let before: Page[] = [];
+    const saved = await library().updateDocument(
+      id,
+      (latest) => {
+        before = latest.pages;
+        const latestById = new Map(latest.pages.map((p) => [p.id, p]));
+        // Pages this operation did not touch keep their latest version (e.g. background OCR finished meanwhile).
+        const merged = pages.map((p) => (snapshot.get(p.id) === p ? (latestById.get(p.id) ?? p) : mergeConcurrentPage(latestById.get(p.id), p)));
+        return { ...latest, pages: merged };
+      },
+      'modified',
+      detail,
+    );
     if (record) {
-      undo.current?.sync(current.pages);
-      undo.current?.push(pages);
+      undo.current?.sync(before);
+      undo.current?.push(saved.pages);
     }
     bump((v) => v + 1);
-    return library().saveDocument({ ...current, pages }, 'modified', detail);
+    return saved;
   };
 
   const undoOp = async () => {

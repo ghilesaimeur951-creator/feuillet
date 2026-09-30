@@ -43,6 +43,23 @@ export function setFilter(pages: readonly Page[], ids: readonly string[] | 'all'
   return pages.map((p) => (!set || set.has(p.id) ? { ...p, filter, ...(adjustments ? { adjustments } : {}) } : p));
 }
 
+function sameGeometry(a: Page, b: Page): boolean {
+  return a.rotation === b.rotation && JSON.stringify(a.quad) === JSON.stringify(b.quad) && a.originalBlobId === b.originalBlobId;
+}
+
+/**
+ * Merges an edited page with the latest stored version of the same page: text recognised in the
+ * meantime (OCR) is kept when the edit did not change the page geometry (e.g. a filter change).
+ */
+export function mergeConcurrentPage(latest: Page | undefined, edited: Page): Page {
+  if (!latest || latest === edited || !sameGeometry(latest, edited)) return edited;
+  const out: Page = { ...edited };
+  if (!out.ocr && latest.ocr) out.ocr = latest.ocr;
+  if (out.text === undefined && latest.text !== undefined) out.text = latest.text;
+  if (!out.textWords && latest.textWords) out.textWords = latest.textWords;
+  return out;
+}
+
 /** Undo/redo stack for editor states (bounded). */
 export class UndoStack<T> {
   private past: T[] = [];

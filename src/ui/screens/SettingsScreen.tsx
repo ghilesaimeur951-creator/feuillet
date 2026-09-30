@@ -126,6 +126,12 @@ export function SettingsScreen() {
           label="Nommer automatiquement"
           hint="« Facture — EDF — 2024-03-12 » au lieu de « Scan du … »"
         />
+        <Switch
+          checked={s.autoOrient}
+          onChange={(v) => settings.set('autoOrient', v)}
+          label="Redresser automatiquement l’orientation"
+          hint="Page à l’envers ou tournée : l’OCR teste les rotations plausibles et garde la meilleure"
+        />
         <div class="settings-row" style={{ display: 'block' }}>
           <span>Langues</span>
           <div class="chips" style={{ marginTop: '8px' }}>

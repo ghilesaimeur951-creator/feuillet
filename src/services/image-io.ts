@@ -111,3 +111,21 @@ export async function imageSize(blob: Blob): Promise<{ width: number; height: nu
   bmp.close();
   return r;
 }
+
+/** Rotates an encoded image by clockwise quarter turns (JPEG output). */
+export async function rotateBlob(blob: Blob, turns: number, quality = 0.9): Promise<Blob> {
+  const t = ((turns % 4) + 4) % 4;
+  if (t === 0) return blob;
+  const bmp = await decodeToBitmap(blob);
+  try {
+    const swap = t % 2 === 1;
+    const c = createCanvas(swap ? bmp.height : bmp.width, swap ? bmp.width : bmp.height);
+    const g = ctx2d(c);
+    g.translate(c.width / 2, c.height / 2);
+    g.rotate((t * Math.PI) / 2);
+    g.drawImage(bmp, -bmp.width / 2, -bmp.height / 2);
+    return await canvasToBlob(c, 'image/jpeg', quality);
+  } finally {
+    bmp.close();
+  }
+}

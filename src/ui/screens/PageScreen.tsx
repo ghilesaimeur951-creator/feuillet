@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { Annotation, DocumentRecord, Page } from '../../core/docs/model';
-import { rotatePage, setFilter } from '../../core/docs/pages';
+import { mergeConcurrentPage, rotatePage, setFilter } from '../../core/docs/pages';
 import type { Quad } from '../../core/geometry/geometry';
 import { fullFrameQuad, isConvex } from '../../core/geometry/geometry';
 import type { Adjustments, FilterId } from '../../core/imaging/filters';
@@ -16,8 +16,14 @@ import { Button, EmptyState, IconButton, Segmented, useBlobUrl } from '../compon
 
 type Tab = 'filter' | 'crop' | 'text' | 'annotate';
 
-async function savePages(doc: DocumentRecord, pages: Page[], detail: string): Promise<void> {
-  await library().saveDocument({ ...doc, pages }, 'modified', detail);
+/** Saves changed pages on top of the latest version of the document (merge by page id). */
+async function savePages(doc: DocumentRecord, updated: ReadonlyMap<string, Page>, detail: string): Promise<void> {
+  await library().updateDocument(
+    doc.id,
+    (latest) => ({ ...latest, pages: latest.pages.map((p) => (updated.has(p.id) ? mergeConcurrentPage(p, updated.get(p.id) as Page) : p)) }),
+    'modified',
+    detail,
+  );
 }
 
 function CropTab({ doc, page }: { doc: DocumentRecord; page: Page }) {
@@ -28,11 +34,7 @@ function CropTab({ doc, page }: { doc: DocumentRecord; page: Page }) {
   const save = async () => {
     const r = await withBusy('Redressement de la page…', () => rerenderPage(library(), page, { quad, rotation }));
     if (r) {
-      await savePages(
-        doc,
-        doc.pages.map((p) => (p.id === page.id ? r : p)),
-        'Recadrage',
-      );
+      await savePages(doc, new Map([[page.id, r]]), 'Recadrage');
       toast('Recadrage appliqué', 'success');
       goBack(`/doc/${doc.id}`);
     }
@@ -117,11 +119,7 @@ export function PageScreen({ docId, pageId, tab }: { docId: string; pageId: stri
       return map;
     });
     if (!updated) return;
-    await savePages(
-      doc,
-      doc.pages.map((p) => updated.get(p.id) ?? p),
-      'Filtre',
-    );
+    await savePages(doc, updated, 'Filtre');
     toast(all ? 'Filtre appliqué à toutes les pages' : 'Filtre appliqué', 'success');
     goBack(`/doc/${doc.id}`);
   };
@@ -130,11 +128,7 @@ export function PageScreen({ docId, pageId, tab }: { docId: string; pageId: stri
     try {
       const next: Page = { ...page, annotations };
       next.thumbBlobId = await library().putBlob(await annotatedThumb(library(), next));
-      await savePages(
-        doc,
-        doc.pages.map((p) => (p.id === page.id ? next : p)),
-        'Annotations',
-      );
+      await savePages(doc, new Map([[page.id, next]]), 'Annotations');
       toast('Annotations enregistrées', 'success');
       goBack(`/doc/${doc.id}`);
     } catch (e) {
