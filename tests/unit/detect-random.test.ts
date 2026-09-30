@@ -104,10 +104,14 @@ describe('robustesse sur des scènes aléatoires', () => {
   test('performance : analyse d’une image 360×270 en temps réel', () => {
     const s = scene(7);
     detectDocument(s.gray); // warm-up (JIT)
-    const t0 = performance.now();
-    const runs = 20;
-    for (let i = 0; i < runs; i++) detectDocument(s.gray);
-    const ms = (performance.now() - t0) / runs;
+    // Median of individual timings: robust to a busy machine or a GC pause.
+    const times: number[] = [];
+    for (let i = 0; i < 21; i++) {
+      const t0 = performance.now();
+      detectDocument(s.gray);
+      times.push(performance.now() - t0);
+    }
+    const ms = times.sort((a, b) => a - b)[10] as number;
     if (process.env.CV_STATS) console.log(`détection : ${ms.toFixed(1)} ms / image 360×270`);
     // Generous bound for CI machines; typical desktop ≈ 15–25 ms, recent phones ≈ 30–60 ms.
     expect(ms).toBeLessThan(120);
