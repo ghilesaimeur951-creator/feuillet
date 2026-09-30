@@ -1,6 +1,6 @@
 import { inflateSync, deflateSync } from 'node:zlib';
 import { readFileSync } from 'node:fs';
-import type { GrayImage, RGBAImage } from '../../src/core/imaging/image';
+import type { GrayImage, RGBAImage } from '../../../src/core/imaging/image';
 
 /** Tiny PNG codec for tests (8-bit gray, gray+alpha, RGB, RGBA; non-interlaced). */
 export function decodePng(buf: Uint8Array): RGBAImage {

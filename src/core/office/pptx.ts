@@ -84,7 +84,7 @@ export function parseTxt(bytes: Uint8Array): ExtractedDocument {
   } catch {
     text = new TextDecoder('windows-1252').decode(bytes);
   }
-  text = text.replace(/^﻿/, '').replace(/\r\n?/g, '\n');
+  text = text.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
   const blocks: Block[] = text.split('\n').map((line) => (line === '\f' ? { kind: 'pagebreak' as const } : { kind: 'paragraph' as const, runs: line ? [{ text: line }] : [] }));
   return { source: 'txt', blocks, warnings: [] };
 }

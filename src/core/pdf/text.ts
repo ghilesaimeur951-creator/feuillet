@@ -46,7 +46,7 @@ export function encodeWinAnsi(text: string): Uint8Array {
     } else if (CP1252_EXTRA[cp] !== undefined) {
       out.push(CP1252_EXTRA[cp] as number);
     } else {
-      const base = ch.normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const base = ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const b = base.codePointAt(0);
       out.push(b !== undefined && b >= 0x20 && b <= 0x7e ? b : 0x3f);
     }

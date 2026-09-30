@@ -21,7 +21,7 @@ declare module 'bun:test' {
     toContain(expected: unknown): void;
     toHaveLength(n: number): void;
     toMatch(re: RegExp | string): void;
-    toThrow(msg?: string | RegExp): void;
+    toThrow(msg?: string | RegExp | (abstract new (...args: never[]) => unknown)): void;
     toBeInstanceOf(c: unknown): void;
     resolves: Matchers<Awaited<T>>;
     rejects: Matchers<unknown>;
