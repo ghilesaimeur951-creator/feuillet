@@ -19,8 +19,18 @@ async function boot() {
     const keep = sessionBlobIds();
     for (const sig of await listSignatures(lib)) keep.add(sig.blobId);
     void lib.collectGarbage(keep);
-    // Ask the browser not to evict our data under storage pressure.
-    void navigator.storage?.persist?.().catch(() => false);
+    // Ask the browser not to evict our data under storage pressure — only once the user has
+    // documents to protect (Firefox shows a permission prompt for this request).
+    const persist = () => void navigator.storage?.persist?.().catch(() => false);
+    if (lib.documents().length) persist();
+    else {
+      const off = lib.subscribe(() => {
+        if (lib.documents().length) {
+          off();
+          persist();
+        }
+      });
+    }
     root.innerHTML = '';
     render(<App />, root);
     if (session && !location.hash.startsWith('#/review') && !location.hash.startsWith('#/scan')) {

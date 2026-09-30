@@ -72,3 +72,34 @@ côté serveur type LibreOffice headless), partage collaboratif.
 - `src/ui/` : écrans et composants.
 
 Détail dans [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+## 6. Bilan de réalisation
+
+| Priorité | Fonctionnalité | État |
+|---|---|---|
+| Indispensable | Caméra, détection temps réel des 4 coins, overlay, stabilisation | ✅ |
+| Indispensable | Capture manuelle et automatique | ✅ |
+| Indispensable | Recadrage manuel (loupe, clavier, Auto, Réinitialiser, rotation) | ✅ |
+| Indispensable | Homographie / correction de perspective | ✅ |
+| Indispensable | Filtres et réglages | ✅ |
+| Indispensable | Multipage, réordonnancement (glisser-déposer) | ✅ |
+| Indispensable | PDF réel, téléchargement, partage | ✅ |
+| Indispensable | Bibliothèque persistante, dossiers | ✅ |
+| Indispensable | OCR, recherche plein texte sur le contenu | ✅ |
+| Importante | Import images multiples, PDF, TXT, glisser-déposer | ✅ |
+| Importante | Corbeille, favoris, étiquettes, tri, vues liste/grille, historique | ✅ |
+| Importante | Thèmes, PWA hors ligne, exports JPG/PNG/TXT, PDF recherchable, profils | ✅ |
+| Avancée | Import DOCX/XLSX/PPTX, export DOCX | ✅ |
+| Avancée | Mot de passe PDF (AES-256), signature, annotations, filigrane, numérotation | ✅ |
+| Avancée | Fusion, division, extraction, pages blanches, doublons | ✅ |
+| Avancée | Classification, extraction facture/reçu, nom et étiquettes automatiques | ✅ |
+| Avancée | Orientation automatique, sauvegarde/restauration, reprise après interruption | ✅ |
+| Future | Synchronisation cloud / multi-appareils | ⏳ abstraction prête |
+| Future | Correction de courbure (livres) | ⏳ |
+| Future | Coffre chiffré dans l’application | ⏳ (protection au niveau du PDF) |
+| Future | Formats binaires DOC/XLS/PPT, HEIC, TIFF | ⏳ nécessite un service de conversion ou des décodeurs dédiés |
+| Future | Écriture manuscrite, « partager vers Feuillet » (Web Share Target) | ⏳ |
+
+Écart assumé par rapport à la spécification : **OpenCV.js n’est pas utilisé**. Le pipeline de
+vision a été écrit en TypeScript (≈ 15 Ko dans le worker, démarrage instantané) ; sa précision
+est mesurée contre la chaîne OpenCV classique dans les tests et lui est supérieure sur nos scènes.
