@@ -48,7 +48,12 @@ export function pageWords(page: Page, w: number, h: number): PdfWord[] {
 }
 
 /** Builds a real PDF from the document pages (annotations and signatures included). */
-export async function exportPdf(lib: Library, doc: DocumentRecord, o: PdfExportOptions, onProgress?: (done: number, total: number) => void): Promise<Blob> {
+export async function exportPdf(
+  lib: Library,
+  doc: DocumentRecord,
+  o: PdfExportOptions,
+  onProgress?: (done: number, total: number) => void,
+): Promise<Blob> {
   const profile = QUALITY_PROFILES.find((p) => p.id === o.quality) ?? (QUALITY_PROFILES[1] as QualityProfile);
   const pages = selectedPages(doc, o.pageIds);
   if (pages.length === 0) throw new Error('Aucune page à exporter');
@@ -69,21 +74,34 @@ export async function exportPdf(lib: Library, doc: DocumentRecord, o: PdfExportO
   }
   const bytes = await buildPdf({
     pages: inputs,
-    info: { title: doc.title, ...(doc.tags.length ? { keywords: doc.tags.join(', ') } : {}), ...(doc.notes ? { subject: doc.notes.slice(0, 200) } : {}) },
+    info: {
+      title: doc.title,
+      ...(doc.tags.length ? { keywords: doc.tags.join(', ') } : {}),
+      ...(doc.notes ? { subject: doc.notes.slice(0, 200) } : {}),
+    },
     ...(o.password ? { password: { user: o.password } } : {}),
   });
   return new Blob([toArrayBuffer(bytes)], { type: 'application/pdf' });
 }
 
 /** JPG/PNG export: a single image, or a ZIP when several pages are exported. */
-export async function exportImages(lib: Library, doc: DocumentRecord, format: 'jpeg' | 'png', pageIds?: readonly string[]): Promise<{ blob: Blob; filename: string }> {
+export async function exportImages(
+  lib: Library,
+  doc: DocumentRecord,
+  format: 'jpeg' | 'png',
+  pageIds?: readonly string[],
+): Promise<{ blob: Blob; filename: string }> {
   const pages = selectedPages(doc, pageIds);
   const type = format === 'png' ? 'image/png' : 'image/jpeg';
   const ext = format === 'png' ? 'png' : 'jpg';
   const files: Array<{ name: string; data: Uint8Array; compress: boolean }> = [];
   for (const [i, p] of pages.entries()) {
     const r = await renderAnnotatedPage(p, (id) => lib.getBlob(id), { type, quality: 0.92 });
-    files.push({ name: `${exportFileName(doc.title, '').replace(/\.$/, '')}-p${String(i + 1).padStart(2, '0')}.${ext}`, data: new Uint8Array(await r.blob.arrayBuffer()), compress: false });
+    files.push({
+      name: `${exportFileName(doc.title, '').replace(/\.$/, '')}-p${String(i + 1).padStart(2, '0')}.${ext}`,
+      data: new Uint8Array(await r.blob.arrayBuffer()),
+      compress: false,
+    });
   }
   if (files.length === 1) {
     const f = files[0] as { name: string; data: Uint8Array };
@@ -136,7 +154,8 @@ export function canShareFiles(): boolean {
 /** Native share sheet (mobile). Returns false when the platform cannot share files. */
 export async function shareBlob(blob: Blob, filename: string, title: string): Promise<'shared' | 'cancelled' | 'unsupported'> {
   const file = new File([blob], filename, { type: blob.type });
-  if (typeof navigator.share !== 'function' || typeof navigator.canShare !== 'function' || !navigator.canShare({ files: [file] })) return 'unsupported';
+  if (typeof navigator.share !== 'function' || typeof navigator.canShare !== 'function' || !navigator.canShare({ files: [file] }))
+    return 'unsupported';
   try {
     await navigator.share({ files: [file], title });
     return 'shared';

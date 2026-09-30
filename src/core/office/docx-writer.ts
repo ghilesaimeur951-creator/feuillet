@@ -15,13 +15,15 @@ export interface DocxInput {
 }
 
 function esc(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    // Characters not allowed in XML 1.0.
-    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/g, '');
+  return (
+    s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      // Characters not allowed in XML 1.0.
+      .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/g, '')
+  );
 }
 
 function paragraph(text: string, style?: string): string {
@@ -45,7 +47,9 @@ function imageXml(rid: string, id: number, cx: number, cy: number): string {
 
 export async function buildDocx(input: DocxInput, now = new Date()): Promise<Uint8Array> {
   const media: Array<{ name: string; data: Uint8Array }> = [];
-  const rels: string[] = ['<Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'];
+  const rels: string[] = [
+    '<Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>',
+  ];
   const body: string[] = [paragraph(input.title, 'Title')];
   // Printable area of an A4 page with 2 cm margins, in EMU.
   const maxW = 6_120_000;
@@ -56,7 +60,9 @@ export async function buildDocx(input: DocxInput, now = new Date()): Promise<Uin
       const rid = `rIdImg${i + 1}`;
       const name = `image${i + 1}.jpeg`;
       media.push({ name, data: p.image.data });
-      rels.push(`<Relationship Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${name}"/>`);
+      rels.push(
+        `<Relationship Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${name}"/>`,
+      );
       const s = Math.min(maxW / p.image.width, maxH / p.image.height);
       body.push(imageXml(rid, i + 1, Math.round(p.image.width * s), Math.round(p.image.height * s)));
     }

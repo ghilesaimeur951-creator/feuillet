@@ -23,9 +23,23 @@ function index(): SearchIndex {
     content: 'ELECTRICITE DE FRANCE\nFacture EDF n° 1234\nMontant TTC : 84,20 €\nÉchéance le 15/04/2024',
     type: 'scan facture',
   });
-  idx.upsert({ ...base, id: 'bail', title: 'Contrat de location', folderPath: 'Logement', tags: ['bail', 'appartement'], content: 'Entre les soussignés…' });
+  idx.upsert({
+    ...base,
+    id: 'bail',
+    title: 'Contrat de location',
+    folderPath: 'Logement',
+    tags: ['bail', 'appartement'],
+    content: 'Entre les soussignés…',
+  });
   idx.upsert({ ...base, id: 'note', title: 'Liste de courses', notes: 'penser à la facture du plombier', content: 'lait, œufs, pain' });
-  idx.upsert({ ...base, id: 'old', title: 'Relevé 2021', content: 'Relevé de compte', createdAt: new Date('2021-06-02').getTime(), updatedAt: new Date('2021-06-02').getTime() });
+  idx.upsert({
+    ...base,
+    id: 'old',
+    title: 'Relevé 2021',
+    content: 'Relevé de compte',
+    createdAt: new Date('2021-06-02').getTime(),
+    updatedAt: new Date('2021-06-02').getTime(),
+  });
   return idx;
 }
 
@@ -60,7 +74,12 @@ describe('moteur de recherche', () => {
     expect(idx.search('logement').map((h) => h.id)).toEqual(['bail']);
     expect(idx.search('plombier').map((h) => h.id)).toEqual(['note']);
     expect(idx.search('location')[0]?.id).toBe('bail');
-    expect(idx.search('facture').map((h) => h.id).sort()).toEqual(['note', 'scan27']);
+    expect(
+      idx
+        .search('facture')
+        .map((h) => h.id)
+        .sort(),
+    ).toEqual(['note', 'scan27']);
   });
 
   test('recherche par date (année, mois)', () => {

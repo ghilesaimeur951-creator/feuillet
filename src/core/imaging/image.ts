@@ -160,8 +160,7 @@ export function sampleBilinear(src: RGBAImage, fx: number, fy: number, out: Uint
   const w01 = (1 - ax) * ay;
   const w11 = ax * ay;
   for (let c = 0; c < 4; c++) {
-    out[o + c] =
-      (d[i00 + c] as number) * w00 + (d[i10 + c] as number) * w10 + (d[i01 + c] as number) * w01 + (d[i11 + c] as number) * w11;
+    out[o + c] = (d[i00 + c] as number) * w00 + (d[i10 + c] as number) * w10 + (d[i01 + c] as number) * w01 + (d[i11 + c] as number) * w11;
   }
 }
 

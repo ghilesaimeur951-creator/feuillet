@@ -123,9 +123,20 @@ export function CropEditor({ src, width, height, quad, onChange }: CropEditorPro
   }
 
   return (
-    <div class="crop-editor" ref={boxRef} style={{ aspectRatio: `${width} / ${height}`, width: `min(100%, calc((100dvh - var(--crop-chrome, 240px)) * ${(width / height).toFixed(4)}))` }}>
+    <div
+      class="crop-editor"
+      ref={boxRef}
+      style={{ aspectRatio: `${width} / ${height}`, width: `min(100%, calc((100dvh - var(--crop-chrome, 240px)) * ${(width / height).toFixed(4)}))` }}
+    >
       <img src={src} alt="Image à recadrer" draggable={false} />
-      <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" class="crop-svg" role="group" aria-label="Zone conservée — déplacez les quatre coins">
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="xMidYMid meet"
+        class="crop-svg"
+        role="group"
+        aria-label="Zone conservée — déplacez les quatre coins"
+      >
         <path d={outside} fill-rule="evenodd" class="crop-outside" />
         <polygon points={pts} class={`crop-poly ${valid ? '' : 'is-invalid'}`} style={{ strokeWidth: `${r / 3}px` }} />
         {q.map((p, i) => {
@@ -152,18 +163,24 @@ export function CropEditor({ src, width, height, quad, onChange }: CropEditorPro
         })}
         {q.map((p, i) => (
           <g key={`c${i}`}>
-            <circle cx={p.x} cy={p.y} r={r * 2.4} class="crop-hit" onPointerDown={(e) => {
-              e.preventDefault();
-              (e.target as Element).setPointerCapture?.(e.pointerId);
-              setDrag({ kind: 'corner', index: i, point: p });
-            }} />
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={r * 2.4}
+              class="crop-hit"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                (e.target as Element).setPointerCapture?.(e.pointerId);
+                setDrag({ kind: 'corner', index: i, point: p });
+              }}
+            />
             <circle
               cx={p.x}
               cy={p.y}
               r={r}
               class={`crop-handle ${drag?.index === i && drag.kind === 'corner' ? 'is-active' : ''}`}
               style={{ strokeWidth: `${r / 2.5}px` }}
-              tabIndex={0}
+              tabindex={0}
               role="slider"
               aria-label={CORNER_NAMES[i]}
               aria-valuetext={`x ${Math.round((p.x / width) * 100)} %, y ${Math.round((p.y / height) * 100)} %`}

@@ -22,10 +22,13 @@ export function rotateAnnotations(list: readonly Annotation[], turns: number): A
   return list.map((a): Annotation => {
     switch (a.type) {
       case 'ink':
-        return { ...a, points: a.points.map((p) => {
-          const [x, y] = pt(p.x, p.y);
-          return { x, y };
-        }) };
+        return {
+          ...a,
+          points: a.points.map((p) => {
+            const [x, y] = pt(p.x, p.y);
+            return { x, y };
+          }),
+        };
       case 'arrow': {
         const [x1, y1] = pt(a.x1, a.y1);
         const [x2, y2] = pt(a.x2, a.y2);

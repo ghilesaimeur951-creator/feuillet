@@ -109,8 +109,10 @@ export function App() {
   else if (seg[0] === 'search') screen = <SearchScreen initial={route.query.get('q') ?? ''} />;
   else if (seg[0] === 'scan') screen = <ScannerScreen query={route.query} />;
   else if (seg[0] === 'review') screen = <ReviewScreen />;
-  else if (seg[0] === 'doc' && seg[1] && seg[2] === 'page' && seg[3]) screen = <PageScreen docId={seg[1]} pageId={seg[3]} tab={route.query.get('tab') ?? 'filter'} />;
-  else if (seg[0] === 'doc' && seg[1]) screen = <DocumentScreen id={seg[1]} preset={route.query.get('export')} openMenu={route.query.get('menu') === '1'} />;
+  else if (seg[0] === 'doc' && seg[1] && seg[2] === 'page' && seg[3])
+    screen = <PageScreen docId={seg[1]} pageId={seg[3]} tab={route.query.get('tab') ?? 'filter'} />;
+  else if (seg[0] === 'doc' && seg[1])
+    screen = <DocumentScreen id={seg[1]} preset={route.query.get('export')} openMenu={route.query.get('menu') === '1'} />;
   else if (seg[0] === 'folders') screen = <FoldersScreen folderId={seg[1] ?? null} />;
   else if (seg[0] === 'tools') screen = <ToolsScreen tool={seg[1] ?? null} />;
   else if (seg[0] === 'settings') screen = <SettingsScreen />;

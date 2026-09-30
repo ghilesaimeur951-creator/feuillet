@@ -6,10 +6,7 @@ export interface RpcRequest {
   params: unknown;
 }
 
-export type RpcResponse =
-  | { id: number; ok: true; result: unknown }
-  | { id: number; ok: false; error: string }
-  | { id: number; progress: unknown };
+export type RpcResponse = { id: number; ok: true; result: unknown } | { id: number; ok: false; error: string } | { id: number; progress: unknown };
 
 interface WorkerLike {
   postMessage(msg: unknown, transfer?: Transferable[]): void;
@@ -57,7 +54,10 @@ export class RpcClient {
   }
 }
 
-export type Handler = (params: never, progress: (p: unknown) => void) => Promise<{ result: unknown; transfer?: Transferable[] }> | { result: unknown; transfer?: Transferable[] };
+export type Handler = (
+  params: never,
+  progress: (p: unknown) => void,
+) => Promise<{ result: unknown; transfer?: Transferable[] }> | { result: unknown; transfer?: Transferable[] };
 
 interface WorkerScope {
   postMessage(msg: unknown, transfer?: Transferable[]): void;

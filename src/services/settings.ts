@@ -57,7 +57,8 @@ class SettingsStore {
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<Settings>;
         for (const k of Object.keys(DEFAULT_SETTINGS) as Array<keyof Settings>) {
-          if (parsed[k] !== undefined && typeof parsed[k] === typeof DEFAULT_SETTINGS[k]) (this.value as unknown as Record<string, unknown>)[k] = parsed[k];
+          if (parsed[k] !== undefined && typeof parsed[k] === typeof DEFAULT_SETTINGS[k])
+            (this.value as unknown as Record<string, unknown>)[k] = parsed[k];
         }
       }
     } catch {

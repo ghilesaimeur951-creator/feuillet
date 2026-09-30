@@ -1,15 +1,7 @@
 import type { FrameQuality } from './quality';
 import type { StabilizedState } from './stabilizer';
 
-export type AutoCaptureStatus =
-  | 'searching'
-  | 'detected'
-  | 'hold-still'
-  | 'partial'
-  | 'blurry'
-  | 'too-dark'
-  | 'capturing'
-  | 'cooldown';
+export type AutoCaptureStatus = 'searching' | 'detected' | 'hold-still' | 'partial' | 'blurry' | 'too-dark' | 'capturing' | 'cooldown';
 
 export interface AutoCaptureState {
   status: AutoCaptureStatus;

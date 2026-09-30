@@ -2,7 +2,7 @@
 
 /** Resolves a path relative to the application root (works under a sub-path, e.g. GitHub Pages). */
 export function appUrl(path: string): string {
-  const base = typeof document !== 'undefined' ? document.baseURI : (globalThis as { location?: { href: string } }).location?.href ?? '/';
+  const base = typeof document !== 'undefined' ? document.baseURI : ((globalThis as { location?: { href: string } }).location?.href ?? '/');
   return new URL(path, base).href;
 }
 

@@ -42,13 +42,16 @@ export async function parsePptx(zip: ZipArchive): Promise<ExtractedDocument> {
           const isTitle = ph && (ph.attrs.type === 'title' || ph.attrs.type === 'ctrTitle');
           const txBody = child(c, 'txBody');
           if (!txBody) continue;
-          const paras = children(txBody, 'p').map(paragraphRuns).filter((r) => r.some((x) => x.text.trim()));
+          const paras = children(txBody, 'p')
+            .map(paragraphRuns)
+            .filter((r) => r.some((x) => x.text.trim()));
           if (!paras.length) continue;
           if (isTitle && !hasTitle) {
             hasTitle = true;
             body.unshift({ kind: 'heading', level: 1, runs: paras.flatMap((r, k) => (k ? [{ text: ' ' }, ...r] : r)) });
           } else {
-            for (const runs of paras) body.push({ kind: 'paragraph', runs, ...(ph && ph.attrs.type !== 'subTitle' ? { list: 'bullet' as const } : {}) });
+            for (const runs of paras)
+              body.push({ kind: 'paragraph', runs, ...(ph && ph.attrs.type !== 'subTitle' ? { list: 'bullet' as const } : {}) });
           }
         } else if (c.name === 'grpSp') {
           await visit(c);
@@ -85,6 +88,8 @@ export function parseTxt(bytes: Uint8Array): ExtractedDocument {
     text = new TextDecoder('windows-1252').decode(bytes);
   }
   text = text.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
-  const blocks: Block[] = text.split('\n').map((line) => (line === '\f' ? { kind: 'pagebreak' as const } : { kind: 'paragraph' as const, runs: line ? [{ text: line }] : [] }));
+  const blocks: Block[] = text
+    .split('\n')
+    .map((line) => (line === '\f' ? { kind: 'pagebreak' as const } : { kind: 'paragraph' as const, runs: line ? [{ text: line }] : [] }));
   return { source: 'txt', blocks, warnings: [] };
 }

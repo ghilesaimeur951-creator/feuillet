@@ -20,9 +20,23 @@ export function Button({
   );
 }
 
-export function IconButton({ icon, label, active, class: cls = '', badge, ...rest }: { icon: IconName; label: string; active?: boolean; badge?: string | number } & JSX.IntrinsicElements['button']) {
+export function IconButton({
+  icon,
+  label,
+  active,
+  class: cls = '',
+  badge,
+  ...rest
+}: { icon: IconName; label: string; active?: boolean; badge?: string | number } & JSX.IntrinsicElements['button']) {
   return (
-    <button type="button" class={`icon-btn ${active ? 'is-active' : ''} ${cls}`} aria-label={label} title={label} aria-pressed={active === undefined ? undefined : active} {...rest}>
+    <button
+      type="button"
+      class={`icon-btn ${active ? 'is-active' : ''} ${cls}`}
+      aria-label={label}
+      title={label}
+      aria-pressed={active === undefined ? undefined : active}
+      {...rest}
+    >
       <Icon name={icon} />
       {badge !== undefined && badge !== '' ? <span class="badge">{badge}</span> : null}
     </button>
@@ -30,7 +44,19 @@ export function IconButton({ icon, label, active, class: cls = '', badge, ...res
 }
 
 /** Modal bottom sheet (mobile) / centered dialog (desktop) with focus management and Escape. */
-export function Sheet({ open, onClose, title, children, wide }: { open: boolean; onClose: () => void; title: string; children: ComponentChildren; wide?: boolean }) {
+export function Sheet({
+  open,
+  onClose,
+  title,
+  children,
+  wide,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: ComponentChildren;
+  wide?: boolean;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return undefined;
@@ -113,7 +139,19 @@ export function ActionList({ items, onDone }: { items: MenuItem[]; onDone?: () =
   );
 }
 
-export function Switch({ checked, onChange, label, hint, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string; disabled?: boolean }) {
+export function Switch({
+  checked,
+  onChange,
+  label,
+  hint,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  hint?: string;
+  disabled?: boolean;
+}) {
   return (
     <label class={`switch-row ${disabled ? 'is-disabled' : ''}`}>
       <span class="switch-text">
@@ -128,7 +166,23 @@ export function Switch({ checked, onChange, label, hint, disabled }: { checked: 
   );
 }
 
-export function Slider({ label, value, min, max, step = 1, onInput, format }: { label: string; value: number; min: number; max: number; step?: number; onInput: (v: number) => void; format?: (v: number) => string }) {
+export function Slider({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  onInput,
+  format,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  onInput: (v: number) => void;
+  format?: (v: number) => string;
+}) {
   return (
     <label class="slider-row">
       <span class="slider-label">
@@ -140,11 +194,28 @@ export function Slider({ label, value, min, max, step = 1, onInput, format }: { 
   );
 }
 
-export function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: Array<{ value: T; label: string; icon?: IconName }>; onChange: (v: T) => void; label: string }) {
+export function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+  label,
+}: {
+  value: T;
+  options: Array<{ value: T; label: string; icon?: IconName }>;
+  onChange: (v: T) => void;
+  label: string;
+}) {
   return (
     <div class="segmented" role="radiogroup" aria-label={label}>
       {options.map((o) => (
-        <button type="button" role="radio" aria-checked={o.value === value} class={o.value === value ? 'is-active' : ''} key={o.value} onClick={() => onChange(o.value)}>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={o.value === value}
+          class={o.value === value ? 'is-active' : ''}
+          key={o.value}
+          onClick={() => onChange(o.value)}
+        >
           {o.icon ? <Icon name={o.icon} size={18} /> : null}
           <span>{o.label}</span>
         </button>
@@ -162,7 +233,17 @@ export function Chip({ children, active, onClick, icon }: { children: ComponentC
   );
 }
 
-export function EmptyState({ icon, title, children, actions }: { icon: IconName; title: string; children?: ComponentChildren; actions?: ComponentChildren }) {
+export function EmptyState({
+  icon,
+  title,
+  children,
+  actions,
+}: {
+  icon: IconName;
+  title: string;
+  children?: ComponentChildren;
+  actions?: ComponentChildren;
+}) {
   return (
     <div class="empty-state">
       <div class="empty-icon">
@@ -187,8 +268,18 @@ export function Skeleton({ count = 6, variant = 'card' }: { count?: number; vari
 
 export function Progress({ value, label }: { value?: number; label?: string }) {
   return (
-    <div class="progress" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value === undefined ? undefined : Math.round(value * 100)}>
-      <div class={`progress-bar ${value === undefined ? 'is-indeterminate' : ''}`} style={value === undefined ? undefined : { width: `${Math.round(value * 100)}%` }} />
+    <div
+      class="progress"
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={value === undefined ? undefined : Math.round(value * 100)}
+    >
+      <div
+        class={`progress-bar ${value === undefined ? 'is-indeterminate' : ''}`}
+        style={value === undefined ? undefined : { width: `${Math.round(value * 100)}%` }}
+      />
     </div>
   );
 }
@@ -233,9 +324,18 @@ export function useBlobUrl(id: string | null | undefined): string | null {
   return url;
 }
 
-export function BlobImage({ id, alt, class: cls = '', ...rest }: { id: string | null | undefined; alt: string } & Omit<JSX.IntrinsicElements['img'], 'src'>) {
+export function BlobImage({
+  id,
+  alt,
+  class: cls = '',
+  ...rest
+}: { id: string | null | undefined; alt: string } & Omit<JSX.IntrinsicElements['img'], 'src'>) {
   const url = useBlobUrl(id);
-  return url ? <img src={url} alt={alt} class={cls} loading="lazy" decoding="async" draggable={false} {...rest} /> : <div class={`img-placeholder ${cls}`} role="img" aria-label={alt} />;
+  return url ? (
+    <img src={url} alt={alt} class={cls} loading="lazy" decoding="async" draggable={false} {...rest} />
+  ) : (
+    <div class={`img-placeholder ${cls}`} role="img" aria-label={alt} />
+  );
 }
 
 export function formatBytes(n: number): string {
@@ -250,5 +350,10 @@ export function formatDate(ts: number, withTime = false): string {
   const today = new Date();
   const sameDay = d.toDateString() === today.toDateString();
   if (sameDay) return `Aujourd’hui ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: d.getFullYear() === today.getFullYear() ? undefined : 'numeric', ...(withTime ? { hour: '2-digit', minute: '2-digit' } : {}) });
+  return d.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: d.getFullYear() === today.getFullYear() ? undefined : 'numeric',
+    ...(withTime ? { hour: '2-digit', minute: '2-digit' } : {}),
+  });
 }

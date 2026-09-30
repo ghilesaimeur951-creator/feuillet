@@ -72,7 +72,16 @@ function DialogView({ d }: { d: DialogRequest }) {
             d.resolve(value);
           }}
         >
-          <input ref={input} class="text-input" type={d.inputType ?? 'text'} value={value} placeholder={d.placeholder} aria-label={d.title} onInput={(e) => setValue((e.target as HTMLInputElement).value)} autoComplete={d.inputType === 'password' ? 'new-password' : 'off'} />
+          <input
+            ref={input}
+            class="text-input"
+            type={d.inputType ?? 'text'}
+            value={value}
+            placeholder={d.placeholder}
+            aria-label={d.title}
+            onInput={(e) => setValue((e.target as HTMLInputElement).value)}
+            autoComplete={d.inputType === 'password' ? 'new-password' : 'off'}
+          />
           <div class="dialog-actions">
             <Button variant="ghost" onClick={cancel}>
               Annuler

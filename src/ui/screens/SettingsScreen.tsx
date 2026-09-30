@@ -9,7 +9,17 @@ import type { Settings } from '../../services/settings';
 import { Icon } from '../components/Icon';
 import { Button, formatBytes, Segmented, Switch } from '../components/ui';
 
-function Select<K extends keyof Settings>({ k, label, hint, options }: { k: K; label: string; hint?: string; options: Array<{ value: string; label: string }> }) {
+function Select<K extends keyof Settings>({
+  k,
+  label,
+  hint,
+  options,
+}: {
+  k: K;
+  label: string;
+  hint?: string;
+  options: Array<{ value: string; label: string }>;
+}) {
   const s = useSettings();
   return (
     <label class="settings-row">
@@ -75,12 +85,13 @@ export function SettingsScreen() {
 
       <h2 class="section-title">Numérisation</h2>
       <div class="settings-group">
-        <Switch checked={s.autoCapture} onChange={(v) => settings.set('autoCapture', v)} label="Capture automatique" hint="Déclenche la photo dès que le document est détecté, net et stable" />
-        <Select
-          k="defaultFilter"
-          label="Filtre par défaut"
-          options={FILTERS.map((f) => ({ value: f.id, label: f.label }))}
+        <Switch
+          checked={s.autoCapture}
+          onChange={(v) => settings.set('autoCapture', v)}
+          label="Capture automatique"
+          hint="Déclenche la photo dès que le document est détecté, net et stable"
         />
+        <Select k="defaultFilter" label="Filtre par défaut" options={FILTERS.map((f) => ({ value: f.id, label: f.label }))} />
         <Select
           k="scanResolution"
           label="Qualité de capture"
@@ -91,20 +102,41 @@ export function SettingsScreen() {
             { value: 'max', label: 'Maximale' },
           ]}
         />
-        <Switch checked={s.importAutoCrop} onChange={(v) => settings.set('importAutoCrop', v)} label="Recadrer les photos importées" hint="Détecte et redresse automatiquement le document sur les images importées" />
+        <Switch
+          checked={s.importAutoCrop}
+          onChange={(v) => settings.set('importAutoCrop', v)}
+          label="Recadrer les photos importées"
+          hint="Détecte et redresse automatiquement le document sur les images importées"
+        />
         <Switch checked={s.haptics} onChange={(v) => settings.set('haptics', v)} label="Vibrations" />
         <Switch checked={s.shutterSound} onChange={(v) => settings.set('shutterSound', v)} label="Son de l’obturateur" />
       </div>
 
       <h2 class="section-title">Reconnaissance de texte (OCR)</h2>
       <div class="settings-group">
-        <Switch checked={s.autoOcr} onChange={(v) => settings.set('autoOcr', v)} label="OCR automatique après un scan" hint="Rend le contenu des scans recherchable" />
-        <Switch checked={s.autoName} onChange={(v) => settings.set('autoName', v)} label="Nommer automatiquement" hint="« Facture — EDF — 2024-03-12 » au lieu de « Scan du … »" />
+        <Switch
+          checked={s.autoOcr}
+          onChange={(v) => settings.set('autoOcr', v)}
+          label="OCR automatique après un scan"
+          hint="Rend le contenu des scans recherchable"
+        />
+        <Switch
+          checked={s.autoName}
+          onChange={(v) => settings.set('autoName', v)}
+          label="Nommer automatiquement"
+          hint="« Facture — EDF — 2024-03-12 » au lieu de « Scan du … »"
+        />
         <div class="settings-row" style={{ display: 'block' }}>
           <span>Langues</span>
           <div class="chips" style={{ marginTop: '8px' }}>
             {OCR_LANGUAGES.map((l) => (
-              <button type="button" key={l.code} class={`chip ${s.ocrLanguages.includes(l.code) ? 'is-active' : ''}`} aria-pressed={s.ocrLanguages.includes(l.code)} onClick={() => toggleLang(l.code)}>
+              <button
+                type="button"
+                key={l.code}
+                class={`chip ${s.ocrLanguages.includes(l.code) ? 'is-active' : ''}`}
+                aria-pressed={s.ocrLanguages.includes(l.code)}
+                onClick={() => toggleLang(l.code)}
+              >
                 {l.label}
               </button>
             ))}
@@ -115,7 +147,15 @@ export function SettingsScreen() {
 
       <h2 class="section-title">Export PDF par défaut</h2>
       <div class="settings-group">
-        <Select k="exportPageSize" label="Format de page" options={[{ value: 'A4', label: 'A4' }, { value: 'Letter', label: 'Letter' }, { value: 'auto', label: 'Automatique' }]} />
+        <Select
+          k="exportPageSize"
+          label="Format de page"
+          options={[
+            { value: 'A4', label: 'A4' },
+            { value: 'Letter', label: 'Letter' },
+            { value: 'auto', label: 'Automatique' },
+          ]}
+        />
         <Select k="exportQuality" label="Qualité" options={QUALITY_PROFILES.map((p) => ({ value: p.id, label: p.label }))} />
         <Switch checked={s.searchablePdf} onChange={(v) => settings.set('searchablePdf', v)} label="PDF recherchable (couche texte OCR)" />
         <Switch checked={s.pageNumbers} onChange={(v) => settings.set('pageNumbers', v)} label="Numéroter les pages" />
@@ -128,7 +168,9 @@ export function SettingsScreen() {
             Espace utilisé
             <small>
               {lib.documents().length} document(s) · {lib.adapter.kind === 'indexeddb' ? 'IndexedDB (sur cet appareil)' : 'mémoire temporaire'}
-              {usage ? ` · ${usage.persisted ? 'stockage persistant accordé' : 'stockage non persistant (le navigateur peut l’effacer en cas de manque de place)'}` : ''}
+              {usage
+                ? ` · ${usage.persisted ? 'stockage persistant accordé' : 'stockage non persistant (le navigateur peut l’effacer en cas de manque de place)'}`
+                : ''}
             </small>
           </span>
           <strong>{usage ? `${formatBytes(usage.usage)} / ${formatBytes(usage.quota)}` : '—'}</strong>
@@ -154,7 +196,8 @@ export function SettingsScreen() {
             size="sm"
             variant="ghost"
             onClick={async () => {
-              if (await confirmDialog('Effacer l’historique ?', 'Les documents ne sont pas supprimés.', { confirmLabel: 'Effacer' })) await library().clearHistory();
+              if (await confirmDialog('Effacer l’historique ?', 'Les documents ne sont pas supprimés.', { confirmLabel: 'Effacer' }))
+                await library().clearHistory();
             }}
           >
             Effacer
@@ -165,7 +208,10 @@ export function SettingsScreen() {
       <h2 class="section-title">Confidentialité</h2>
       <div class="settings-group">
         <p class="settings-row" style={{ display: 'block' }}>
-          <Icon name="shield" size={18} /> <strong>Traitement 100 % local.</strong> La détection, les filtres, l’OCR et la création des PDF s’exécutent dans votre navigateur. Vos documents sont stockés uniquement sur cet appareil (IndexedDB) ; aucune donnée n’est envoyée à un serveur, et la politique de sécurité du contenu (CSP) de l’application interdit toute connexion vers un autre domaine. Aucun compte, aucun traceur.
+          <Icon name="shield" size={18} /> <strong>Traitement 100 % local.</strong> La détection, les filtres, l’OCR et la création des PDF
+          s’exécutent dans votre navigateur. Vos documents sont stockés uniquement sur cet appareil (IndexedDB) ; aucune donnée n’est envoyée à un
+          serveur, et la politique de sécurité du contenu (CSP) de l’application interdit toute connexion vers un autre domaine. Aucun compte, aucun
+          traceur.
         </p>
       </div>
 
@@ -194,7 +240,8 @@ export function SettingsScreen() {
           size="sm"
           variant="ghost"
           onClick={async () => {
-            if (await confirmDialog('Réinitialiser les paramètres ?', 'Vos documents sont conservés.', { confirmLabel: 'Réinitialiser' })) settings.reset();
+            if (await confirmDialog('Réinitialiser les paramètres ?', 'Vos documents sont conservés.', { confirmLabel: 'Réinitialiser' }))
+              settings.reset();
           }}
         >
           Réinitialiser les paramètres
@@ -203,4 +250,3 @@ export function SettingsScreen() {
     </div>
   );
 }
-

@@ -60,12 +60,7 @@ function fmt(n: number): string {
  * Builds the content stream of a page: the page image, the invisible OCR text layer
  * (text rendering mode 3), an optional watermark and footer.
  */
-export function buildPageContent(
-  page: PdfPageInput,
-  imgW: number,
-  imgH: number,
-  layout: ReturnType<typeof layoutPage>,
-): string {
+export function buildPageContent(page: PdfPageInput, imgW: number, imgH: number, layout: ReturnType<typeof layoutPage>): string {
   const ops: string[] = [];
   ops.push('q', `${fmt(layout.width)} 0 0 ${fmt(layout.height)} ${fmt(layout.x)} ${fmt(layout.y)} cm`, '/Im0 Do', 'Q');
   const sx = layout.width / imgW;
@@ -95,15 +90,34 @@ export function buildPageContent(
     const c = Math.cos(angle);
     const s = Math.sin(angle);
     const tw = helveticaWidth(bytes, size);
-    const cx = layout.pageWidth / 2 - (c * tw) / 2 + (s * size * 0.35);
-    const cy = layout.pageHeight / 2 - (s * tw) / 2 - (c * size * 0.35);
-    ops.push('q', '/GSw gs', '0.75 0.1 0.1 rg', 'BT', `/F0 ${fmt(size)} Tf`, `${fmt(c)} ${fmt(s)} ${fmt(-s)} ${fmt(c)} ${fmt(cx)} ${fmt(cy)} Tm`, `${hexLiteral(bytes)} Tj`, 'ET', 'Q');
+    const cx = layout.pageWidth / 2 - (c * tw) / 2 + s * size * 0.35;
+    const cy = layout.pageHeight / 2 - (s * tw) / 2 - c * size * 0.35;
+    ops.push(
+      'q',
+      '/GSw gs',
+      '0.75 0.1 0.1 rg',
+      'BT',
+      `/F0 ${fmt(size)} Tf`,
+      `${fmt(c)} ${fmt(s)} ${fmt(-s)} ${fmt(c)} ${fmt(cx)} ${fmt(cy)} Tm`,
+      `${hexLiteral(bytes)} Tj`,
+      'ET',
+      'Q',
+    );
   }
   if (page.footer) {
     const bytes = encodeWinAnsi(page.footer);
     const size = 9;
     const tw = helveticaWidth(bytes, size);
-    ops.push('q', '0.35 g', 'BT', `/F0 ${size} Tf`, `1 0 0 1 ${fmt((layout.pageWidth - tw) / 2)} ${fmt(Math.max(8, Math.min(18, layout.y / 2)))} Tm`, `${hexLiteral(bytes)} Tj`, 'ET', 'Q');
+    ops.push(
+      'q',
+      '0.35 g',
+      'BT',
+      `/F0 ${size} Tf`,
+      `1 0 0 1 ${fmt((layout.pageWidth - tw) / 2)} ${fmt(Math.max(8, Math.min(18, layout.y / 2)))} Tm`,
+      `${hexLiteral(bytes)} Tj`,
+      'ET',
+      'Q',
+    );
   }
   return ops.join('\n');
 }
@@ -151,7 +165,8 @@ export async function buildPdf(input: PdfDocumentInput): Promise<Uint8Array> {
   objs.push({ id: pagesId, dict: `<< /Type /Pages /Kids [${pageIds.map((i) => `${i} 0 R`).join(' ')}] /Count ${pageIds.length} >>` });
   objs.push({ id: catalogId, dict: `<< /Type /Catalog /Pages ${pagesId} 0 R /ViewerPreferences << /DisplayDocTitle true >> >>` });
 
-  const encryption = input.password?.user !== undefined && input.password.user.length > 0 ? await setupAes256(input.password.user, input.password.owner) : null;
+  const encryption =
+    input.password?.user !== undefined && input.password.user.length > 0 ? await setupAes256(input.password.user, input.password.owner) : null;
   const encryptString = async (bytes: Uint8Array): Promise<string> =>
     `<${toHex(encryption ? await aesEncryptWithIv(encryption.fileKey, bytes) : bytes)}>`;
 
@@ -159,7 +174,11 @@ export async function buildPdf(input: PdfDocumentInput): Promise<Uint8Array> {
   const infoId = alloc();
   const date = input.fixedDate ?? new Date();
   const infoParts: string[] = [];
-  const meta = { Producer: 'Feuillet', Creator: input.info?.creator ?? 'Feuillet', ...(input.info?.title ? { Title: input.info.title } : {}) } as Record<string, string>;
+  const meta = {
+    Producer: 'Feuillet',
+    Creator: input.info?.creator ?? 'Feuillet',
+    ...(input.info?.title ? { Title: input.info.title } : {}),
+  } as Record<string, string>;
   if (input.info?.author) meta.Author = input.info.author;
   if (input.info?.subject) meta.Subject = input.info.subject;
   if (input.info?.keywords) meta.Keywords = input.info.keywords;

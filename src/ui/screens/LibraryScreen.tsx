@@ -62,7 +62,11 @@ export function LibraryScreen({ view }: { view: string }) {
       <header class="top-bar">
         <Logo />
         <IconButton icon="upload" label="Importer des fichiers" onClick={() => openImportPicker()} />
-        <IconButton icon={s.viewMode === 'grid' ? 'list' : 'grid'} label={s.viewMode === 'grid' ? 'Affichage en liste' : 'Affichage en grille'} onClick={() => settings.set('viewMode', s.viewMode === 'grid' ? 'list' : 'grid')} />
+        <IconButton
+          icon={s.viewMode === 'grid' ? 'list' : 'grid'}
+          label={s.viewMode === 'grid' ? 'Affichage en liste' : 'Affichage en grille'}
+          onClick={() => settings.set('viewMode', s.viewMode === 'grid' ? 'list' : 'grid')}
+        />
       </header>
       <a class="search-field" href="#/search" aria-label="Rechercher dans les documents">
         <Icon name="search" />
@@ -84,7 +88,8 @@ export function LibraryScreen({ view }: { view: string }) {
             </>
           }
         >
-          Photographiez une feuille : ses bords sont détectés automatiquement, la perspective est corrigée et le texte devient recherchable. Tout reste sur votre appareil.
+          Photographiez une feuille : ses bords sont détectés automatiquement, la perspective est corrigée et le texte devient recherchable. Tout
+          reste sur votre appareil.
         </EmptyState>
       ) : (
         <>
@@ -141,7 +146,12 @@ export function LibraryScreen({ view }: { view: string }) {
             <label class="row small muted">
               <Icon name="sort" size={18} />
               <span class="visually-hidden">Trier par</span>
-              <select class="select" style={{ minHeight: '38px', width: 'auto' }} value={s.sortBy} onChange={(e) => settings.set('sortBy', (e.target as HTMLSelectElement).value as typeof s.sortBy)}>
+              <select
+                class="select"
+                style={{ minHeight: '38px', width: 'auto' }}
+                value={s.sortBy}
+                onChange={(e) => settings.set('sortBy', (e.target as HTMLSelectElement).value as typeof s.sortBy)}
+              >
                 {SORTS.map((o) => (
                   <option key={o.id} value={o.id}>
                     {o.label}
@@ -158,7 +168,16 @@ export function LibraryScreen({ view }: { view: string }) {
           ) : (
             <div class={s.viewMode === 'grid' ? 'doc-grid' : 'doc-list'}>
               {docs.map((d) => (
-                <DocCard key={d.id} doc={d} mode={s.viewMode} selected={selected.has(d.id)} selecting={selecting} onOpen={open} onToggle={toggle} onLongPress={toggle} />
+                <DocCard
+                  key={d.id}
+                  doc={d}
+                  mode={s.viewMode}
+                  selected={selected.has(d.id)}
+                  selecting={selecting}
+                  onOpen={open}
+                  onToggle={toggle}
+                  onLongPress={toggle}
+                />
               ))}
             </div>
           )}
@@ -176,7 +195,12 @@ export function LibraryScreen({ view }: { view: string }) {
             disabled={selected.size < 2}
             onClick={async () => {
               const ordered = docs.filter((d) => selected.has(d.id));
-              const merged = await withBusy('Fusion des documents…', () => mergeDocuments(lib, ordered.map((d) => d.id)));
+              const merged = await withBusy('Fusion des documents…', () =>
+                mergeDocuments(
+                  lib,
+                  ordered.map((d) => d.id),
+                ),
+              );
               if (merged) {
                 setSelected(new Set());
                 toast('Documents fusionnés', 'success');

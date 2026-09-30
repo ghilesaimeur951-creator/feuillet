@@ -1,15 +1,5 @@
 import type { Point, Quad } from '../geometry/geometry';
-import {
-  convexHull,
-  cross,
-  distance,
-  fitLine,
-  isConvex,
-  lineIntersection,
-  orderQuad,
-  polygonArea,
-  quadAngles,
-} from '../geometry/geometry';
+import { convexHull, cross, distance, fitLine, isConvex, lineIntersection, orderQuad, polygonArea, quadAngles } from '../geometry/geometry';
 import type { GrayImage } from '../imaging/image';
 import { findComponents } from './components';
 import type { Component } from './components';
@@ -123,12 +113,10 @@ export function refineQuad(rough: Quad, outline: readonly Point[], diag: number)
       corners.push(original);
       continue;
     }
-    const p = lineIntersection(
-      prev.point,
-      { x: prev.point.x + prev.dir.x, y: prev.point.y + prev.dir.y },
-      next.point,
-      { x: next.point.x + next.dir.x, y: next.point.y + next.dir.y },
-    );
+    const p = lineIntersection(prev.point, { x: prev.point.x + prev.dir.x, y: prev.point.y + prev.dir.y }, next.point, {
+      x: next.point.x + next.dir.x,
+      y: next.point.y + next.dir.y,
+    });
     corners.push(p && distance(p, original) < diag * 0.08 ? p : original);
   }
   return orderQuad(corners);
@@ -143,9 +131,7 @@ function sampleGray(img: GrayImage, x: number, y: number): number {
 function isBorderSide(a: Point, b: Point, w: number, h: number): boolean {
   const mx = w * 0.02 + 1;
   const my = h * 0.02 + 1;
-  return (
-    (a.x <= mx && b.x <= mx) || (a.y <= my && b.y <= my) || (a.x >= w - 1 - mx && b.x >= w - 1 - mx) || (a.y >= h - 1 - my && b.y >= h - 1 - my)
-  );
+  return (a.x <= mx && b.x <= mx) || (a.y <= my && b.y <= my) || (a.x >= w - 1 - mx && b.x >= w - 1 - mx) || (a.y >= h - 1 - my && b.y >= h - 1 - my);
 }
 
 function ramp(v: number, lo: number, hi: number): number {
@@ -241,8 +227,7 @@ export function scoreQuad(
   const contrastScore = Math.min(1, 0.25 + contrast * 7);
   const fillScore = ramp(fill, 0.7, 0.95);
 
-  const total =
-    areaScore * angleScore * Math.pow(support, 1.3) * contrastScore * (0.3 + 0.7 * fillScore) * centrality * (partial ? 0.85 : 1);
+  const total = areaScore * angleScore * Math.pow(support, 1.3) * contrastScore * (0.3 + 0.7 * fillScore) * centrality * (partial ? 0.85 : 1);
   return {
     score: { total, area: areaScore, angles: angleScore, support, contrast, fill, centrality },
     partial,

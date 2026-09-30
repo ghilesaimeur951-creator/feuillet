@@ -23,8 +23,16 @@ const RULES: Rule[] = [
   { id: 'no-ts-ignore', re: /@ts-(ignore|nocheck)/, message: 'directive @ts-ignore/@ts-nocheck interdite' },
   { id: 'no-console-log', re: /\bconsole\.log\(/, message: 'console.log interdit dans le code applicatif', appliesTo: (f) => f.startsWith('src/') },
   { id: 'no-debugger', re: /\bdebugger\b/, message: 'instruction debugger' },
-  { id: 'no-invisible-chars', re: /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u00a0\u200b-\u200f\u202f\u2060\ufeff\ufffe\uffff\u0300-\u036f]/, message: 'caractère invisible ou de contrôle littéral (utiliser un échappement \\uXXXX)' },
-  { id: 'no-secrets', re: /(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{24,}|-----BEGIN (RSA |EC )?PRIVATE KEY-----|ghp_[A-Za-z0-9]{30,}|AIza[0-9A-Za-z_-]{35})/, message: 'secret potentiel dans le code' },
+  {
+    id: 'no-invisible-chars',
+    re: /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u00a0\u200b-\u200f\u202f\u2060\ufeff\ufffe\uffff\u0300-\u036f]/,
+    message: 'caractère invisible ou de contrôle littéral (utiliser un échappement \\uXXXX)',
+  },
+  {
+    id: 'no-secrets',
+    re: /(AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{24,}|-----BEGIN (RSA |EC )?PRIVATE KEY-----|ghp_[A-Za-z0-9]{30,}|AIza[0-9A-Za-z_-]{35})/,
+    message: 'secret potentiel dans le code',
+  },
 ];
 
 function walk(dir: string, out: string[] = []): string[] {

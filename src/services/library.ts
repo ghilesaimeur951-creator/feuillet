@@ -418,7 +418,11 @@ export class Library {
       this.folderMap.set(x.id, next);
       await this.adapter.folders.put(next);
     }
-    await this.trashDocuments(this.documents().filter((d) => d.folderId && ids.has(d.folderId)).map((d) => d.id));
+    await this.trashDocuments(
+      this.documents()
+        .filter((d) => d.folderId && ids.has(d.folderId))
+        .map((d) => d.id),
+    );
     this.emit();
   }
 
@@ -438,7 +442,11 @@ export class Library {
     if (f.parentId && this.folderMap.get(f.parentId)?.deletedAt !== undefined) await this.restoreFolder(f.parentId, false);
     if (withDocuments) {
       const ids = new Set(all.map((x) => x.id));
-      await this.restoreDocuments(this.trash().filter((d) => d.folderId && ids.has(d.folderId) && d.deletedAt === deletedAt).map((d) => d.id));
+      await this.restoreDocuments(
+        this.trash()
+          .filter((d) => d.folderId && ids.has(d.folderId) && d.deletedAt === deletedAt)
+          .map((d) => d.id),
+      );
     }
     this.emit();
   }
@@ -529,7 +537,12 @@ export class Library {
   async importBackup(bytes: Uint8Array): Promise<{ documents: number; folders: number }> {
     const zip = ZipArchive.open(bytes);
     if (!zip.has('manifest.json')) throw new Error('Sauvegarde invalide (manifest.json absent)');
-    const manifest = JSON.parse(await zip.readText('manifest.json')) as { app?: string; documents?: DocumentRecord[]; folders?: Folder[]; history?: HistoryEntry[] };
+    const manifest = JSON.parse(await zip.readText('manifest.json')) as {
+      app?: string;
+      documents?: DocumentRecord[];
+      folders?: Folder[];
+      history?: HistoryEntry[];
+    };
     if (manifest.app !== 'feuillet' || !Array.isArray(manifest.documents)) throw new Error('Ce fichier n’est pas une sauvegarde Feuillet');
     const types = zip.has('blob-types.json') ? (JSON.parse(await zip.readText('blob-types.json')) as Record<string, string>) : {};
     let nd = 0;

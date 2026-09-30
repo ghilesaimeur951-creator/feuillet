@@ -294,8 +294,7 @@ export function laplacianVariance(src: GrayImage, mask?: Uint8Array): number {
     for (let x = 1; x < w - 1; x++) {
       const i = y * w + x;
       if (mask && mask[i] === 0) continue;
-      const v =
-        4 * (s[i] as number) - (s[i - 1] as number) - (s[i + 1] as number) - (s[i - w] as number) - (s[i + w] as number);
+      const v = 4 * (s[i] as number) - (s[i - 1] as number) - (s[i + 1] as number) - (s[i - w] as number) - (s[i + w] as number);
       sum += v;
       sum2 += v * v;
       n++;

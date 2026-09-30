@@ -50,7 +50,10 @@ export function DocDetailsSheet({ doc, open, onClose }: { doc: DocumentRecord; o
   const lib = library();
   const [tagInput, setTagInput] = useState('');
   const [notes, setNotes] = useState(doc.notes);
-  const suggestions = lib.allTags().filter((t) => !doc.tags.includes(t) && (!tagInput || t.startsWith(tagInput.toLowerCase()))).slice(0, 8);
+  const suggestions = lib
+    .allTags()
+    .filter((t) => !doc.tags.includes(t) && (!tagInput || t.startsWith(tagInput.toLowerCase())))
+    .slice(0, 8);
 
   const addTag = async (t: string) => {
     const v = t.trim().toLowerCase();
@@ -67,7 +70,16 @@ export function DocDetailsSheet({ doc, open, onClose }: { doc: DocumentRecord; o
           {doc.tags.map((t) => (
             <span class="tag" key={t}>
               {t}
-              <button type="button" aria-label={`Retirer l’étiquette ${t}`} onClick={() => void lib.setTags(doc.id, doc.tags.filter((x) => x !== t))}>
+              <button
+                type="button"
+                aria-label={`Retirer l’étiquette ${t}`}
+                onClick={() =>
+                  void lib.setTags(
+                    doc.id,
+                    doc.tags.filter((x) => x !== t),
+                  )
+                }
+              >
                 <Icon name="close" size={14} />
               </button>
             </span>
@@ -81,7 +93,14 @@ export function DocDetailsSheet({ doc, open, onClose }: { doc: DocumentRecord; o
             void addTag(tagInput);
           }}
         >
-          <input class="text-input" style={{ flex: 1 }} value={tagInput} placeholder="Ajouter une étiquette" aria-label="Nouvelle étiquette" onInput={(e) => setTagInput((e.target as HTMLInputElement).value)} />
+          <input
+            class="text-input"
+            style={{ flex: 1 }}
+            value={tagInput}
+            placeholder="Ajouter une étiquette"
+            aria-label="Nouvelle étiquette"
+            onInput={(e) => setTagInput((e.target as HTMLInputElement).value)}
+          />
           <Button type="submit" icon="plus">
             Ajouter
           </Button>
@@ -125,7 +144,14 @@ export function DocDetailsSheet({ doc, open, onClose }: { doc: DocumentRecord; o
 
       <label class="field">
         <span>Notes</span>
-        <textarea class="text-input" style={{ fontFamily: 'inherit', minHeight: '90px' }} value={notes} onInput={(e) => setNotes((e.target as HTMLTextAreaElement).value)} onBlur={() => notes !== doc.notes && void lib.setNotes(doc.id, notes)} placeholder="Notes personnelles (incluses dans la recherche)" />
+        <textarea
+          class="text-input"
+          style={{ fontFamily: 'inherit', minHeight: '90px' }}
+          value={notes}
+          onInput={(e) => setNotes((e.target as HTMLTextAreaElement).value)}
+          onBlur={() => notes !== doc.notes && void lib.setNotes(doc.id, notes)}
+          placeholder="Notes personnelles (incluses dans la recherche)"
+        />
       </label>
 
       {doc.invoice ? <InvoiceCard invoice={doc.invoice} /> : null}

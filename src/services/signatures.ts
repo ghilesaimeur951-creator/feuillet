@@ -25,7 +25,10 @@ export async function saveSignature(lib: Library, png: Blob, width: number, heig
 export async function deleteSignature(lib: Library, id: string): Promise<void> {
   const list = await listSignatures(lib);
   const s = list.find((x) => x.id === id);
-  await lib.setSetting(KEY, list.filter((x) => x.id !== id));
+  await lib.setSetting(
+    KEY,
+    list.filter((x) => x.id !== id),
+  );
   // The blob stays if a page still uses it; otherwise the garbage collector removes it later.
   void s;
 }

@@ -20,7 +20,10 @@ function mapError(e: unknown): CameraError {
   switch (name) {
     case 'NotAllowedError':
     case 'SecurityError':
-      return new CameraError('Accès à la caméra refusé. Autorisez la caméra dans les réglages du navigateur (icône à gauche de l’adresse), puis réessayez.', 'denied');
+      return new CameraError(
+        'Accès à la caméra refusé. Autorisez la caméra dans les réglages du navigateur (icône à gauche de l’adresse), puis réessayez.',
+        'denied',
+      );
     case 'NotFoundError':
     case 'OverconstrainedError':
       return new CameraError('Aucune caméra compatible n’a été trouvée sur cet appareil.', 'not-found');
@@ -57,7 +60,8 @@ export class Camera {
 
   async start(video: HTMLVideoElement, deviceId?: string): Promise<void> {
     if (!window.isSecureContext) throw new CameraError('La caméra nécessite une connexion sécurisée (HTTPS) ou localhost.', 'insecure');
-    if (!Camera.isSupported()) throw new CameraError('Ce navigateur ne permet pas d’accéder à la caméra. Utilisez l’import de photos.', 'unsupported');
+    if (!Camera.isSupported())
+      throw new CameraError('Ce navigateur ne permet pas d’accéder à la caméra. Utilisez l’import de photos.', 'unsupported');
     this.stop();
     const base: MediaTrackConstraints = deviceId ? { deviceId: { exact: deviceId } } : { facingMode: { ideal: 'environment' } };
     // From the most to the least demanding; phones negotiate the best resolution they support.
@@ -110,7 +114,10 @@ export class Camera {
   }
 
   capabilities(): CameraCapabilities {
-    const caps = (this.track?.getCapabilities?.() ?? {}) as MediaTrackCapabilities & { torch?: boolean; zoom?: { min: number; max: number; step: number } };
+    const caps = (this.track?.getCapabilities?.() ?? {}) as MediaTrackCapabilities & {
+      torch?: boolean;
+      zoom?: { min: number; max: number; step: number };
+    };
     return { torch: !!caps.torch, zoom: caps.zoom && caps.zoom.max > caps.zoom.min ? caps.zoom : null };
   }
 

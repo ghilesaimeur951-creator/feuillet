@@ -7,7 +7,16 @@ import { confirmDialog, errorMessage, library, toast, withBusy } from '../../app
 import { runOcr } from '../../services/ocr-runner';
 import { createPage, splitDoublePage } from '../../services/pages';
 import { processing } from '../../services/processing/client';
-import { discardSession, getSession, modeDefaults, moveCapture, removeCapture, SCAN_MODES, subscribeSession, updateCapture } from '../../services/scan-session';
+import {
+  discardSession,
+  getSession,
+  modeDefaults,
+  moveCapture,
+  removeCapture,
+  SCAN_MODES,
+  subscribeSession,
+  updateCapture,
+} from '../../services/scan-session';
 import type { Capture, ScanSession } from '../../services/scan-session';
 import { settings } from '../../services/settings';
 import { CropEditor } from '../components/CropEditor';
@@ -78,7 +87,15 @@ export function ReviewScreen() {
           <IconButton icon="back" label="Retour" onClick={() => goBack('/')} />
           <h1>Vérification</h1>
         </header>
-        <EmptyState icon="scan" title="Aucune page capturée" actions={<Button variant="primary" icon="scan" onClick={() => navigate('/scan', { replace: true })}>Scanner</Button>} />
+        <EmptyState
+          icon="scan"
+          title="Aucune page capturée"
+          actions={
+            <Button variant="primary" icon="scan" onClick={() => navigate('/scan', { replace: true })}>
+              Scanner
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -141,7 +158,12 @@ export function ReviewScreen() {
           icon="close"
           label="Abandonner ce scan"
           onClick={async () => {
-            if (await confirmDialog('Abandonner le scan ?', `${captures.length} page(s) capturée(s) seront supprimées.`, { confirmLabel: 'Abandonner', danger: true })) {
+            if (
+              await confirmDialog('Abandonner le scan ?', `${captures.length} page(s) capturée(s) seront supprimées.`, {
+                confirmLabel: 'Abandonner',
+                danger: true,
+              })
+            ) {
               await discardSession(lib);
               goBack('/');
             }
@@ -184,7 +206,11 @@ export function ReviewScreen() {
             </Button>
           </>
         ) : null}
-        <Button variant="ghost" icon="rotateCw" onClick={() => void updateCapture(lib, cur.id, { rotation: ((cur.rotation + 1) % 4) as Capture['rotation'] })}>
+        <Button
+          variant="ghost"
+          icon="rotateCw"
+          onClick={() => void updateCapture(lib, cur.id, { rotation: ((cur.rotation + 1) % 4) as Capture['rotation'] })}
+        >
           Pivoter{cur.rotation ? ` (${cur.rotation * 90}°)` : ''}
         </Button>
         <Button
@@ -201,7 +227,14 @@ export function ReviewScreen() {
 
       <div class="review-strip">
         {captures.map((c, k) => (
-          <button type="button" key={c.id} class={`strip-item ${k === i ? 'is-active' : ''}`} onClick={() => setIndex(k)} aria-label={`Page ${k + 1}`} aria-current={k === i}>
+          <button
+            type="button"
+            key={c.id}
+            class={`strip-item ${k === i ? 'is-active' : ''}`}
+            onClick={() => setIndex(k)}
+            aria-label={`Page ${k + 1}`}
+            aria-current={k === i}
+          >
             <BlobImage id={c.blobId} alt="" />
             <span class="strip-num">{k + 1}</span>
           </button>
@@ -217,8 +250,19 @@ export function ReviewScreen() {
         )}
         {captures.length > 1 ? (
           <div class="strip-move">
-            <IconButton icon="back" label="Déplacer la page vers la gauche" disabled={i === 0} onClick={() => void moveCapture(lib, i, i - 1).then(() => setIndex(i - 1))} />
-            <IconButton icon="back" class="flip" label="Déplacer la page vers la droite" disabled={i === captures.length - 1} onClick={() => void moveCapture(lib, i, i + 1).then(() => setIndex(i + 1))} />
+            <IconButton
+              icon="back"
+              label="Déplacer la page vers la gauche"
+              disabled={i === 0}
+              onClick={() => void moveCapture(lib, i, i - 1).then(() => setIndex(i - 1))}
+            />
+            <IconButton
+              icon="back"
+              class="flip"
+              label="Déplacer la page vers la droite"
+              disabled={i === captures.length - 1}
+              onClick={() => void moveCapture(lib, i, i + 1).then(() => setIndex(i + 1))}
+            />
           </div>
         ) : null}
       </div>

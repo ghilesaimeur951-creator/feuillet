@@ -102,12 +102,7 @@ export function angleAt(a: Point, b: Point, c: Point): number {
 }
 
 export function quadAngles(q: Quad): [number, number, number, number] {
-  return [
-    angleAt(q[3], q[0], q[1]),
-    angleAt(q[0], q[1], q[2]),
-    angleAt(q[1], q[2], q[3]),
-    angleAt(q[2], q[3], q[0]),
-  ];
+  return [angleAt(q[3], q[0], q[1]), angleAt(q[0], q[1], q[2]), angleAt(q[1], q[2], q[3]), angleAt(q[2], q[3], q[0])];
 }
 
 /**

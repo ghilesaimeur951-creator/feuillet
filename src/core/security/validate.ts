@@ -72,7 +72,12 @@ const MB = (n: number) => `${Math.round(n / 1024 / 1024)} Mo`;
  * checks the size limits and rejects dangerous or unsupported formats with a clear message.
  * `zipKind` must be supplied for ZIP containers after inspecting [Content_Types].xml.
  */
-export function classifyImport(name: string, bytes: Uint8Array, zipKind?: 'docx' | 'xlsx' | 'pptx' | null, limits: ImportLimits = DEFAULT_IMPORT_LIMITS): ImportKind {
+export function classifyImport(
+  name: string,
+  bytes: Uint8Array,
+  zipKind?: 'docx' | 'xlsx' | 'pptx' | null,
+  limits: ImportLimits = DEFAULT_IMPORT_LIMITS,
+): ImportKind {
   if (bytes.length === 0) throw new ImportError(`« ${name} » est vide.`, 'empty');
   const sniffed = sniffType(bytes);
   const e = ext(name);
@@ -85,7 +90,10 @@ export function classifyImport(name: string, bytes: Uint8Array, zipKind?: 'docx'
       if (bytes.length > limits.maxImageBytes) throw new ImportError(`Image trop volumineuse (max ${MB(limits.maxImageBytes)}).`, 'too-large');
       return 'image';
     case 'heic':
-      throw new ImportError('Les photos HEIC ne sont pas décodables par ce navigateur. Exportez-la en JPEG depuis la galerie, ou utilisez le scanner de l’application.', 'unsupported');
+      throw new ImportError(
+        'Les photos HEIC ne sont pas décodables par ce navigateur. Exportez-la en JPEG depuis la galerie, ou utilisez le scanner de l’application.',
+        'unsupported',
+      );
     case 'tiff':
       throw new ImportError('Le format TIFF n’est pas pris en charge par les navigateurs. Convertissez-le en PNG ou JPEG.', 'unsupported');
     case 'svg':

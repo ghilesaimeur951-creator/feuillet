@@ -24,7 +24,12 @@ export function TrashScreen() {
             variant="ghost"
             icon="trash"
             onClick={async () => {
-              if (await confirmDialog('Vider la corbeille ?', 'Les documents seront supprimés définitivement de cet appareil.', { confirmLabel: 'Vider', danger: true })) {
+              if (
+                await confirmDialog('Vider la corbeille ?', 'Les documents seront supprimés définitivement de cet appareil.', {
+                  confirmLabel: 'Vider',
+                  danger: true,
+                })
+              ) {
                 await lib.emptyTrash();
                 toast('Corbeille vidée', 'success');
               }

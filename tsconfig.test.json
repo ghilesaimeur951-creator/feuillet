@@ -3,5 +3,12 @@
   "compilerOptions": {
     "types": []
   },
-  "include": ["src", "tests/unit", "tests/types", "scripts"]
+  "include": [
+    "src",
+    "tests/unit",
+    "tests/types",
+    "tests/e2e",
+    "scripts",
+    "playwright.config.ts"
+  ]
 }

@@ -40,7 +40,8 @@ export function TextEditor({ doc, page }: { doc: DocumentRecord; page: Page }) {
         </div>
         <div class="editor-panel">
           <EmptyState icon="text" title="Pas encore de texte">
-            La reconnaissance (OCR) s’exécute entièrement sur votre appareil ({langs.map((l) => OCR_LANGUAGES.find((x) => x.code === l)?.label ?? l).join(', ')}). Aucune donnée n’est envoyée.
+            La reconnaissance (OCR) s’exécute entièrement sur votre appareil (
+            {langs.map((l) => OCR_LANGUAGES.find((x) => x.code === l)?.label ?? l).join(', ')}). Aucune donnée n’est envoyée.
           </EmptyState>
           <Button variant="primary" icon="text" size="lg" onClick={() => void ocrFlow(doc.id, [page.id], true)}>
             Reconnaître le texte
@@ -67,7 +68,12 @@ export function TextEditor({ doc, page }: { doc: DocumentRecord; page: Page }) {
         </div>
         {editing ? (
           <>
-            <textarea class="text-input ocr-text" value={draft} onInput={(e) => setDraft((e.target as HTMLTextAreaElement).value)} aria-label="Texte reconnu (modifiable)" />
+            <textarea
+              class="text-input ocr-text"
+              value={draft}
+              onInput={(e) => setDraft((e.target as HTMLTextAreaElement).value)}
+              aria-label="Texte reconnu (modifiable)"
+            />
             <div class="row">
               <Button variant="ghost" onClick={() => (setDraft(text), setEditing(false))}>
                 Annuler
@@ -89,7 +95,12 @@ export function TextEditor({ doc, page }: { doc: DocumentRecord; page: Page }) {
           <>
             <label class="search-field">
               <Icon name="search" />
-              <input value={find} placeholder="Rechercher dans le texte" aria-label="Rechercher dans le texte de la page" onInput={(e) => setFind((e.target as HTMLInputElement).value)} />
+              <input
+                value={find}
+                placeholder="Rechercher dans le texte"
+                aria-label="Rechercher dans le texte de la page"
+                onInput={(e) => setFind((e.target as HTMLInputElement).value)}
+              />
               {find ? <span class="small">{matches} résultat(s)</span> : null}
             </label>
             <pre class="ocr-text ocr-view search-hit" tabIndex={0} aria-label="Texte reconnu">
@@ -112,7 +123,12 @@ export function TextEditor({ doc, page }: { doc: DocumentRecord; page: Page }) {
               <Button icon="pen" onClick={() => (setDraft(text), setEditing(true))}>
                 Modifier
               </Button>
-              <Button icon="download" onClick={() => downloadBlob(new Blob([`\ufeff${text}`], { type: 'text/plain;charset=utf-8' }), exportFileName(`${doc.title} - page`, 'txt'))}>
+              <Button
+                icon="download"
+                onClick={() =>
+                  downloadBlob(new Blob([`\ufeff${text}`], { type: 'text/plain;charset=utf-8' }), exportFileName(`${doc.title} - page`, 'txt'))
+                }
+              >
                 .txt
               </Button>
               <Button variant="ghost" icon="reset" onClick={() => void ocrFlow(doc.id, [page.id], true)}>

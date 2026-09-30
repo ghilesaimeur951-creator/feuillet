@@ -34,7 +34,11 @@ export function serve(dir: string, port: number, https = false): { port: number;
     const key = join(certDir, 'key.pem');
     if (!existsSync(cert)) {
       mkdirSync(certDir, { recursive: true });
-      const r = spawnSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', key, '-out', cert, '-days', '365', '-subj', '/CN=feuillet.local'], { encoding: 'utf8' });
+      const r = spawnSync(
+        'openssl',
+        ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', key, '-out', cert, '-days', '365', '-subj', '/CN=feuillet.local'],
+        { encoding: 'utf8' },
+      );
       if (r.status !== 0) throw new Error(`openssl indisponible : ${r.stderr}`);
     }
     tls = { cert: Bun.file(cert), key: Bun.file(key) };
@@ -67,5 +71,7 @@ if (import.meta.main) {
   const https = Bun.argv.includes('--https');
   const port = Number(Bun.env.PORT ?? 4173);
   const s = serve(dir, port, https);
-  console.log(`Feuillet servi sur ${https ? 'https' : 'http'}://localhost:${s.port}  (réseau local : ${https ? 'https' : 'http'}://<ip-de-cette-machine>:${s.port})`);
+  console.log(
+    `Feuillet servi sur ${https ? 'https' : 'http'}://localhost:${s.port}  (réseau local : ${https ? 'https' : 'http'}://<ip-de-cette-machine>:${s.port})`,
+  );
 }

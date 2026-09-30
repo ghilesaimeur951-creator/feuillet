@@ -52,7 +52,12 @@ export async function decodeToRGBA(blob: Blob, maxSide = Infinity): Promise<RGBA
   }
 }
 
-export function bitmapToRGBA(src: ImageBitmap | HTMLVideoElement | HTMLCanvasElement | OffscreenCanvas, maxSide = Infinity, srcW?: number, srcH?: number): RGBAImage {
+export function bitmapToRGBA(
+  src: ImageBitmap | HTMLVideoElement | HTMLCanvasElement | OffscreenCanvas,
+  maxSide = Infinity,
+  srcW?: number,
+  srcH?: number,
+): RGBAImage {
   const w0 = srcW ?? ('videoWidth' in src ? src.videoWidth : src.width);
   const h0 = srcH ?? ('videoHeight' in src ? src.videoHeight : src.height);
   const s = Math.min(1, maxSide / Math.max(w0, h0));

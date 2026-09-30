@@ -146,7 +146,8 @@ function matchTerm(term: string, tokens: Set<string>, allowPrefix: boolean): num
   let best = 0;
   for (const t of tokens) {
     if (allowPrefix && term.length >= 2 && t.startsWith(term)) best = Math.max(best, 0.7);
-    else if (term.length >= 5 && Math.abs(t.length - term.length) <= 1 && t[0] === term[0] && editDistance(term, t, 1) <= 1) best = Math.max(best, 0.45);
+    else if (term.length >= 5 && Math.abs(t.length - term.length) <= 1 && t[0] === term[0] && editDistance(term, t, 1) <= 1)
+      best = Math.max(best, 0.45);
     if (best >= 0.7) break;
   }
   return best;

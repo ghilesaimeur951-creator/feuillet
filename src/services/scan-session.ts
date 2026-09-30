@@ -9,7 +9,12 @@ import type { Library } from './library';
 
 export type ScanMode = 'document' | 'multipage' | 'card' | 'book' | 'whiteboard' | 'photo' | 'receipt';
 
-export const SCAN_MODES: ReadonlyArray<{ id: ScanMode; label: string; icon: 'doc' | 'pages' | 'card' | 'book' | 'board' | 'photo' | 'receipt'; hint: string }> = [
+export const SCAN_MODES: ReadonlyArray<{
+  id: ScanMode;
+  label: string;
+  icon: 'doc' | 'pages' | 'card' | 'book' | 'board' | 'photo' | 'receipt';
+  hint: string;
+}> = [
   { id: 'document', label: 'Document', icon: 'doc', hint: 'Une page, redressée et nettoyée' },
   { id: 'multipage', label: 'Multipage', icon: 'pages', hint: 'Enchaînez les pages sans quitter la caméra' },
   { id: 'card', label: 'Carte', icon: 'card', hint: 'Carte d’identité, carte de visite, petit document' },
@@ -140,7 +145,10 @@ export function sessionBlobIds(): Set<string> {
 }
 
 /** Default processing for each mode. */
-export function modeDefaults(mode: ScanMode, userDefault: import('../core/imaging/filters').FilterId): { filter: import('../core/imaging/filters').FilterId; crop: boolean; snap: boolean } {
+export function modeDefaults(
+  mode: ScanMode,
+  userDefault: import('../core/imaging/filters').FilterId,
+): { filter: import('../core/imaging/filters').FilterId; crop: boolean; snap: boolean } {
   switch (mode) {
     case 'photo':
       return { filter: 'original', crop: false, snap: false };

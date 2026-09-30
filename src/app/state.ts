@@ -92,8 +92,23 @@ export function errorMessage(e: unknown): string {
 
 export type DialogRequest =
   | { kind: 'confirm'; title: string; message?: string; confirmLabel?: string; danger?: boolean; resolve: (ok: boolean) => void }
-  | { kind: 'prompt'; title: string; message?: string; value?: string; placeholder?: string; confirmLabel?: string; inputType?: 'text' | 'password'; resolve: (v: string | null) => void }
-  | { kind: 'choose'; title: string; message?: string; options: Array<{ value: string; label: string; hint?: string }>; resolve: (v: string | null) => void };
+  | {
+      kind: 'prompt';
+      title: string;
+      message?: string;
+      value?: string;
+      placeholder?: string;
+      confirmLabel?: string;
+      inputType?: 'text' | 'password';
+      resolve: (v: string | null) => void;
+    }
+  | {
+      kind: 'choose';
+      title: string;
+      message?: string;
+      options: Array<{ value: string; label: string; hint?: string }>;
+      resolve: (v: string | null) => void;
+    };
 
 let dialog: DialogRequest | null = null;
 const dialogListeners = new Set<() => void>();
@@ -129,7 +144,11 @@ export function promptDialog(
   return new Promise((resolve) => openDialog({ kind: 'prompt', title, ...opts, resolve }));
 }
 
-export function chooseDialog(title: string, options: Array<{ value: string; label: string; hint?: string }>, message?: string): Promise<string | null> {
+export function chooseDialog(
+  title: string,
+  options: Array<{ value: string; label: string; hint?: string }>,
+  message?: string,
+): Promise<string | null> {
   return new Promise((resolve) => openDialog({ kind: 'choose', title, options, ...(message ? { message } : {}), resolve }));
 }
 

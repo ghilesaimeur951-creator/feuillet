@@ -68,7 +68,11 @@ export function SignatureSheet({ open, onClose, onPick }: { open: boolean; onClo
     paint();
     const pos = (e: PointerEvent) => {
       const r = c.getBoundingClientRect();
-      return { x: ((e.clientX - r.left) / r.width) * c.width, y: ((e.clientY - r.top) / r.height) * c.height, p: e.pressure > 0 && e.pointerType === 'pen' ? e.pressure : 0.5 };
+      return {
+        x: ((e.clientX - r.left) / r.width) * c.width,
+        y: ((e.clientY - r.top) / r.height) * c.height,
+        p: e.pressure > 0 && e.pointerType === 'pen' ? e.pressure : 0.5,
+      };
     };
     const down = (e: PointerEvent) => {
       e.preventDefault();
@@ -175,7 +179,14 @@ export function SignatureSheet({ open, onClose, onPick }: { open: boolean; onClo
           </div>
           <div class="row">
             {['#15233b', '#1d4ed8', '#000000'].map((c) => (
-              <button type="button" key={c} class={`color-dot ${c === color ? 'is-active' : ''}`} style={{ background: c }} aria-label={`Couleur ${c === '#1d4ed8' ? 'bleue' : c === '#000000' ? 'noire' : 'bleu nuit'}`} onClick={() => setColor(c)} />
+              <button
+                type="button"
+                key={c}
+                class={`color-dot ${c === color ? 'is-active' : ''}`}
+                style={{ background: c }}
+                aria-label={`Couleur ${c === '#1d4ed8' ? 'bleue' : c === '#000000' ? 'noire' : 'bleu nuit'}`}
+                onClick={() => setColor(c)}
+              />
             ))}
             <span class="spacer" />
             <Button
@@ -212,7 +223,12 @@ export function SignatureSheet({ open, onClose, onPick }: { open: boolean; onClo
           <label class="btn btn-primary btn-lg">
             <Icon name="upload" />
             <span>Choisir une image</span>
-            <input type="file" accept="image/*" class="visually-hidden" onChange={(e) => void importImage((e.target as HTMLInputElement).files?.[0])} />
+            <input
+              type="file"
+              accept="image/*"
+              class="visually-hidden"
+              onChange={(e) => void importImage((e.target as HTMLInputElement).files?.[0])}
+            />
           </label>
         </div>
       )}

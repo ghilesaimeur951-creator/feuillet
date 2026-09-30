@@ -36,7 +36,12 @@ async function pickDocuments(title: string, min = 1): Promise<string[] | null> {
   for (;;) {
     const remaining = docs.filter((d) => !picked.includes(d.id));
     const options = remaining.slice(0, 60).map((d) => ({ value: d.id, label: d.title, hint: `${d.pages.length} page(s)` }));
-    if (picked.length >= min) options.unshift({ value: '__done', label: `✓ Terminer (${picked.length} sélectionné(s))`, hint: picked.map((id) => lib.get(id)?.title).join(' → ') });
+    if (picked.length >= min)
+      options.unshift({
+        value: '__done',
+        label: `✓ Terminer (${picked.length} sélectionné(s))`,
+        hint: picked.map((id) => lib.get(id)?.title).join(' → '),
+      });
     const c = await chooseDialog(`${title} — document ${picked.length + 1}`, options);
     if (c === null) return null;
     if (c === '__done') return picked;
@@ -115,7 +120,14 @@ export function ToolsScreen({ tool }: { tool: string | null }) {
     input.onchange = async () => {
       const f = input.files?.[0];
       if (!f) return;
-      if (!(await confirmDialog('Restaurer cette sauvegarde ?', 'Les documents de la sauvegarde seront ajoutés ; les documents existants plus récents sont conservés.', { confirmLabel: 'Restaurer' }))) return;
+      if (
+        !(await confirmDialog(
+          'Restaurer cette sauvegarde ?',
+          'Les documents de la sauvegarde seront ajoutés ; les documents existants plus récents sont conservés.',
+          { confirmLabel: 'Restaurer' },
+        ))
+      )
+        return;
       const r = await withBusy('Restauration…', async () => lib.importBackup(new Uint8Array(await f.arrayBuffer())));
       if (r) toast(`${r.documents} document(s) et ${r.folders} dossier(s) restaurés`, 'success');
     };
@@ -125,7 +137,12 @@ export function ToolsScreen({ tool }: { tool: string | null }) {
   const batchOcr = async () => {
     const pending = lib.documents().filter((d) => d.pages.some((p) => !p.ocr && !p.text));
     if (!pending.length) return toast('Tous les documents ont déjà du texte', 'info');
-    if (!(await confirmDialog(`OCR de ${pending.length} document(s)`, 'La reconnaissance s’exécute localement et peut prendre plusieurs minutes.', { confirmLabel: 'Lancer' }))) return;
+    if (
+      !(await confirmDialog(`OCR de ${pending.length} document(s)`, 'La reconnaissance s’exécute localement et peut prendre plusieurs minutes.', {
+        confirmLabel: 'Lancer',
+      }))
+    )
+      return;
     for (const d of pending) await ocrFlow(d.id);
   };
 
@@ -143,9 +160,24 @@ export function ToolsScreen({ tool }: { tool: string | null }) {
       <h2 class="section-title">PDF et documents</h2>
       <div class="tool-grid">
         <Tool icon="merge" title="Fusionner" text="Assembler plusieurs documents en un seul" onClick={() => void merge()} />
-        <Tool icon="split" title="Diviser / extraire" text="Séparer un document ou en extraire des pages" onClick={() => void openFor('Diviser', (id) => navigate(`/doc/${id}?menu=1`))} />
-        <Tool icon="pdf" title="Compresser" text="Exporter un PDF « Petite taille »" onClick={() => void openFor('Compresser', (id) => navigate(`/doc/${id}?export=small`))} />
-        <Tool icon="lock" title="Protéger un PDF" text="Mot de passe AES-256 à l’export" onClick={() => void openFor('Protéger', (id) => navigate(`/doc/${id}?export=protect`))} />
+        <Tool
+          icon="split"
+          title="Diviser / extraire"
+          text="Séparer un document ou en extraire des pages"
+          onClick={() => void openFor('Diviser', (id) => navigate(`/doc/${id}?menu=1`))}
+        />
+        <Tool
+          icon="pdf"
+          title="Compresser"
+          text="Exporter un PDF « Petite taille »"
+          onClick={() => void openFor('Compresser', (id) => navigate(`/doc/${id}?export=small`))}
+        />
+        <Tool
+          icon="lock"
+          title="Protéger un PDF"
+          text="Mot de passe AES-256 à l’export"
+          onClick={() => void openFor('Protéger', (id) => navigate(`/doc/${id}?export=protect`))}
+        />
         <Tool icon="text" title="OCR par lot" text="Reconnaître le texte de tous les documents" onClick={() => void batchOcr()} />
         <Tool icon="layers" title="Doublons" text="Retrouver les pages scannées plusieurs fois" onClick={() => navigate('/tools/duplicates')} />
       </div>
@@ -156,9 +188,14 @@ export function ToolsScreen({ tool }: { tool: string | null }) {
         <Tool icon="clock" title="Historique" text="Documents créés, ouverts, modifiés, exportés" onClick={() => navigate('/history')} />
         <Tool icon="trash" title="Corbeille" text={`${lib.trash().length} élément(s) — purge après 30 jours`} onClick={() => navigate('/trash')} />
       </div>
-      <SignatureSheet open={sig} onClose={() => setSig(false)} onPick={() => (setSig(false), toast('Signature prête : insérez-la depuis « Annoter / signer » sur une page', 'info'))} />
+      <SignatureSheet
+        open={sig}
+        onClose={() => setSig(false)}
+        onPick={() => (setSig(false), toast('Signature prête : insérez-la depuis « Annoter / signer » sur une page', 'info'))}
+      />
       <p class="muted small" style={{ marginTop: '20px' }}>
-        <Icon name="shield" size={14} /> Tous les traitements (détection, filtres, OCR, PDF) s’exécutent sur cet appareil. Aucun document n’est envoyé à un serveur.
+        <Icon name="shield" size={14} /> Tous les traitements (détection, filtres, OCR, PDF) s’exécutent sur cet appareil. Aucun document n’est envoyé
+        à un serveur.
       </p>
     </div>
   );

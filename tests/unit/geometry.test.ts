@@ -1,15 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { Point } from '../../src/core/geometry/geometry';
-import {
-  convexHull,
-  isConvex,
-  orderQuad,
-  polygonArea,
-  quadAngles,
-  rotatePoint90,
-  lineIntersection,
-  fitLine,
-} from '../../src/core/geometry/geometry';
+import { convexHull, isConvex, orderQuad, polygonArea, quadAngles, rotatePoint90, lineIntersection, fitLine } from '../../src/core/geometry/geometry';
 import { applyHomography, computeHomography, estimateOutputSize, invert3 } from '../../src/core/geometry/homography';
 
 const TL = { x: 10, y: 12 };

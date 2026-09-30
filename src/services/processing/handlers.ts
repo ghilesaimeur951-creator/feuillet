@@ -100,7 +100,11 @@ export async function previewPage(p: RenderParams): Promise<Blob> {
 export async function detectInImage(blob: Blob): Promise<{ quad: Quad | null; width: number; height: number; score: number }> {
   const full = await decodeToRGBA(blob, 4096);
   const size = await originalSize(blob, full);
-  const small = resizeRGBA(full, Math.max(1, Math.round((full.width * 640) / Math.max(full.width, full.height))), Math.max(1, Math.round((full.height * 640) / Math.max(full.width, full.height))));
+  const small = resizeRGBA(
+    full,
+    Math.max(1, Math.round((full.width * 640) / Math.max(full.width, full.height))),
+    Math.max(1, Math.round((full.height * 640) / Math.max(full.width, full.height))),
+  );
   const r = detectDocument(toGray(small), { minScore: 0.35 });
   return {
     quad: r.quad && !r.partial ? scaleQuad(r.quad, size.width / small.width, size.height / small.height) : null,

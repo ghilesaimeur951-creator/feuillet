@@ -32,7 +32,16 @@ export function FilterEditor({ page, onSave }: { page: Page; onSave: (filter: Fi
       try {
         const original = await library().getBlob(page.originalBlobId);
         if (!original || my !== seq.current) return;
-        const blob = await processing.preview({ original, quad: page.quad, rotation: page.rotation, filter, adjustments: adj, maxSide: 1100, quality: 0.85, cacheKey: page.originalBlobId });
+        const blob = await processing.preview({
+          original,
+          quad: page.quad,
+          rotation: page.rotation,
+          filter,
+          adjustments: adj,
+          maxSide: 1100,
+          quality: 0.85,
+          cacheKey: page.originalBlobId,
+        });
         if (my !== seq.current) return;
         const url = URL.createObjectURL(blob);
         setPreview((old) => {
@@ -66,7 +75,15 @@ export function FilterEditor({ page, onSave }: { page: Page; onSave: (filter: Fi
       <div class="editor-panel">
         <div class="filter-chips" role="radiogroup" aria-label="Préréglage">
           {FILTERS.map((f) => (
-            <button type="button" role="radio" aria-checked={f.id === filter} key={f.id} class={`filter-chip ${f.id === filter ? 'is-active' : ''}`} onClick={() => setFilter(f.id)} title={f.description}>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={f.id === filter}
+              key={f.id}
+              class={`filter-chip ${f.id === filter ? 'is-active' : ''}`}
+              onClick={() => setFilter(f.id)}
+              title={f.description}
+            >
               <span class={`filter-swatch swatch-${f.id}`} aria-hidden="true" />
               {f.label}
             </button>

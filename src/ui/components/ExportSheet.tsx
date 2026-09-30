@@ -11,7 +11,19 @@ import { Button, formatBytes, Segmented, Sheet, Slider, Switch } from './ui';
 type Format = 'pdf' | 'jpeg' | 'png' | 'txt' | 'docx' | 'original';
 
 /** Export / share / print sheet with real PDF options and a size estimate. */
-export function ExportSheet({ doc, open, onClose, pageIds, preset }: { doc: DocumentRecord; open: boolean; onClose: () => void; pageIds?: string[]; preset?: 'small' | 'protect' }) {
+export function ExportSheet({
+  doc,
+  open,
+  onClose,
+  pageIds,
+  preset,
+}: {
+  doc: DocumentRecord;
+  open: boolean;
+  onClose: () => void;
+  pageIds?: string[];
+  preset?: 'small' | 'protect';
+}) {
   const d = defaultExportOptions();
   const [format, setFormat] = useState<Format>('pdf');
   const [pageSize, setPageSize] = useState<PageSizeId>(d.pageSize);
@@ -29,7 +41,14 @@ export function ExportSheet({ doc, open, onClose, pageIds, preset }: { doc: Docu
   const hasText = pages.some((p) => (p.ocr?.text ?? p.text ?? '').trim());
   const hasWords = pages.some((p) => (p.ocr?.words.length ?? 0) > 0 || (p.textWords?.length ?? 0) > 0);
   const profile = QUALITY_PROFILES.find((p) => p.id === quality) as QualityProfile;
-  const estimate = useMemo(() => estimatePdfSize(pages.map((p) => ({ width: p.width, height: p.height, grayscale: p.filter === 'bw' || p.filter === 'grayscale' })), profile), [pages, profile]);
+  const estimate = useMemo(
+    () =>
+      estimatePdfSize(
+        pages.map((p) => ({ width: p.width, height: p.height, grayscale: p.filter === 'bw' || p.filter === 'grayscale' })),
+        profile,
+      ),
+    [pages, profile],
+  );
 
   const build = async (): Promise<{ blob: Blob; filename: string } | undefined> => {
     const lib = library();
@@ -40,7 +59,17 @@ export function ExportSheet({ doc, open, onClose, pageIds, preset }: { doc: Docu
           const blob = await exportPdf(
             lib,
             doc,
-            { pageSize, orientation, quality, margin, searchable, pageNumbers, ...(watermark.trim() ? { watermark } : {}), ...(protect ? { password } : {}), ...(pageIds?.length ? { pageIds } : {}) },
+            {
+              pageSize,
+              orientation,
+              quality,
+              margin,
+              searchable,
+              pageNumbers,
+              ...(watermark.trim() ? { watermark } : {}),
+              ...(protect ? { password } : {}),
+              ...(pageIds?.length ? { pageIds } : {}),
+            },
             (done, total) => progress(done / total, `Page ${done}/${total}…`),
           );
           return { blob, filename: exportFileName(doc.title, 'pdf') };
@@ -89,7 +118,17 @@ export function ExportSheet({ doc, open, onClose, pageIds, preset }: { doc: Docu
   };
 
   const print = async () => {
-    const blob = await withBusy('Préparation de l’impression…', () => exportPdf(library(), doc, { pageSize, orientation, quality: 'high', margin, searchable: false, pageNumbers, ...(pageIds?.length ? { pageIds } : {}) }));
+    const blob = await withBusy('Préparation de l’impression…', () =>
+      exportPdf(library(), doc, {
+        pageSize,
+        orientation,
+        quality: 'high',
+        margin,
+        searchable: false,
+        pageNumbers,
+        ...(pageIds?.length ? { pageIds } : {}),
+      }),
+    );
     if (blob) {
       printPdf(blob);
       log('Impression');
@@ -116,7 +155,12 @@ export function ExportSheet({ doc, open, onClose, pageIds, preset }: { doc: Docu
         <>
           <div class="field">
             <span>Qualité et taille</span>
-            <Segmented label="Profil de compression" value={quality} options={QUALITY_PROFILES.map((p) => ({ value: p.id, label: p.label }))} onChange={setQuality} />
+            <Segmented
+              label="Profil de compression"
+              value={quality}
+              options={QUALITY_PROFILES.map((p) => ({ value: p.id, label: p.label }))}
+              onChange={setQuality}
+            />
             <small class="muted">
               Taille estimée : <strong>≈ {formatBytes(estimate)}</strong> · {pages.length} page(s) · {profile.maxSide} px max
             </small>
@@ -132,32 +176,85 @@ export function ExportSheet({ doc, open, onClose, pageIds, preset }: { doc: Docu
             </label>
             <label class="field" style={{ flex: 1, minWidth: '140px' }}>
               <span>Orientation</span>
-              <select class="select" value={orientation} disabled={pageSize === 'auto'} onChange={(e) => setOrientation((e.target as HTMLSelectElement).value as OrientationId)}>
+              <select
+                class="select"
+                value={orientation}
+                disabled={pageSize === 'auto'}
+                onChange={(e) => setOrientation((e.target as HTMLSelectElement).value as OrientationId)}
+              >
                 <option value="auto">Automatique</option>
                 <option value="portrait">Portrait</option>
                 <option value="landscape">Paysage</option>
               </select>
             </label>
           </div>
-          <Slider label="Marges" value={margin} min={0} max={72} step={6} onInput={setMargin} format={(v) => (v ? `${Math.round(v / 2.835)} mm` : 'aucune')} />
-          <Switch checked={searchable && hasWords} disabled={!hasWords} onChange={setSearchable} label="PDF recherchable" hint={hasWords ? 'Couche de texte invisible (OCR) : sélection et recherche dans tout lecteur PDF' : 'Lancez l’OCR du document pour activer cette option'} />
+          <Slider
+            label="Marges"
+            value={margin}
+            min={0}
+            max={72}
+            step={6}
+            onInput={setMargin}
+            format={(v) => (v ? `${Math.round(v / 2.835)} mm` : 'aucune')}
+          />
+          <Switch
+            checked={searchable && hasWords}
+            disabled={!hasWords}
+            onChange={setSearchable}
+            label="PDF recherchable"
+            hint={
+              hasWords
+                ? 'Couche de texte invisible (OCR) : sélection et recherche dans tout lecteur PDF'
+                : 'Lancez l’OCR du document pour activer cette option'
+            }
+          />
           <Switch checked={pageNumbers} onChange={setPageNumbers} label="Numéroter les pages" />
           <label class="field">
             <span>Filigrane (facultatif)</span>
-            <input class="text-input" value={watermark} maxLength={40} placeholder="ex. COPIE, CONFIDENTIEL" onInput={(e) => setWatermark((e.target as HTMLInputElement).value)} />
+            <input
+              class="text-input"
+              value={watermark}
+              maxLength={40}
+              placeholder="ex. COPIE, CONFIDENTIEL"
+              onInput={(e) => setWatermark((e.target as HTMLInputElement).value)}
+            />
           </label>
-          <Switch checked={protect} onChange={setProtect} label="Protéger par mot de passe" hint="Chiffrement AES-256 : le PDF ne s’ouvre qu’avec ce mot de passe" />
+          <Switch
+            checked={protect}
+            onChange={setProtect}
+            label="Protéger par mot de passe"
+            hint="Chiffrement AES-256 : le PDF ne s’ouvre qu’avec ce mot de passe"
+          />
           {protect ? (
             <label class="field">
               <span>Mot de passe</span>
-              <input class="text-input" type="password" autoComplete="new-password" value={password} onInput={(e) => setPassword((e.target as HTMLInputElement).value)} />
+              <input
+                class="text-input"
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
+              />
             </label>
           ) : null}
         </>
       ) : null}
-      {format === 'docx' ? <Switch checked={docxImages} onChange={setDocxImages} label="Inclure les images des pages" hint={hasText ? 'Le texte reconnu est ajouté sous chaque page' : 'Aucun texte reconnu : seules les images seront incluses'} /> : null}
-      {(format === 'txt' || (format === 'docx' && !docxImages)) && !hasText ? <p class="banner banner-info">Ce document n’a pas encore de texte : lancez l’OCR d’abord.</p> : null}
-      {format === 'jpeg' || format === 'png' ? <p class="muted small">{pages.length > 1 ? `${pages.length} images réunies dans une archive ZIP.` : 'Une image.'} Annotations et signatures incluses.</p> : null}
+      {format === 'docx' ? (
+        <Switch
+          checked={docxImages}
+          onChange={setDocxImages}
+          label="Inclure les images des pages"
+          hint={hasText ? 'Le texte reconnu est ajouté sous chaque page' : 'Aucun texte reconnu : seules les images seront incluses'}
+        />
+      ) : null}
+      {(format === 'txt' || (format === 'docx' && !docxImages)) && !hasText ? (
+        <p class="banner banner-info">Ce document n’a pas encore de texte : lancez l’OCR d’abord.</p>
+      ) : null}
+      {format === 'jpeg' || format === 'png' ? (
+        <p class="muted small">
+          {pages.length > 1 ? `${pages.length} images réunies dans une archive ZIP.` : 'Une image.'} Annotations et signatures incluses.
+        </p>
+      ) : null}
 
       <div class="dialog-actions" style={{ flexWrap: 'wrap' }}>
         {format === 'pdf' ? (

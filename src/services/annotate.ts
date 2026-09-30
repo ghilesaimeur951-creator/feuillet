@@ -5,7 +5,13 @@ import { canvasToBlob, createCanvas, ctx2d, decodeToBitmap } from './image-io';
 type Ctx = OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D;
 
 /** Draws normalised annotations onto a context of size (w, h). */
-export async function drawAnnotations(g: Ctx, list: readonly Annotation[], w: number, h: number, loadBlob: (id: string) => Promise<Blob | undefined>): Promise<void> {
+export async function drawAnnotations(
+  g: Ctx,
+  list: readonly Annotation[],
+  w: number,
+  h: number,
+  loadBlob: (id: string) => Promise<Blob | undefined>,
+): Promise<void> {
   for (const a of list) {
     g.save();
     switch (a.type) {

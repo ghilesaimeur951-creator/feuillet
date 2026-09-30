@@ -42,7 +42,7 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') || document.querySelector('.sheet-backdrop')) return;
+      if ((t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) || document.querySelector('.sheet-backdrop')) return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         void (e.shiftKey ? redo() : undoOp());
@@ -67,7 +67,17 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
           <IconButton icon="back" label="Retour" onClick={() => goBack('/')} />
           <h1>Document</h1>
         </header>
-        <EmptyState icon="doc" title={doc ? 'Ce document est dans la corbeille' : 'Document introuvable'} actions={doc ? <Button onClick={() => void lib.restoreDocuments([doc.id])}>Restaurer</Button> : <Button onClick={() => navigate('/')}>Bibliothèque</Button>} />
+        <EmptyState
+          icon="doc"
+          title={doc ? 'Ce document est dans la corbeille' : 'Document introuvable'}
+          actions={
+            doc ? (
+              <Button onClick={() => void lib.restoreDocuments([doc.id])}>Restaurer</Button>
+            ) : (
+              <Button onClick={() => navigate('/')}>Bibliothèque</Button>
+            )
+          }
+        />
       </div>
     );
   }
@@ -95,7 +105,12 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
 
   const deletePages = async (ids: string[]) => {
     if (ids.length >= doc.pages.length) {
-      if (await confirmDialog('Supprimer le document ?', 'Toutes les pages seraient supprimées : le document sera placé dans la corbeille.', { confirmLabel: 'Mettre à la corbeille', danger: true })) {
+      if (
+        await confirmDialog('Supprimer le document ?', 'Toutes les pages seraient supprimées : le document sera placé dans la corbeille.', {
+          confirmLabel: 'Mettre à la corbeille',
+          danger: true,
+        })
+      ) {
         await trashWithUndo([doc.id]);
         navigate('/', { replace: true });
       }
@@ -154,9 +169,19 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
       if (!f) return;
       const page = await withBusy('Remplacement…', async () => {
         const det = await processing.detect(f);
-        return createPage(library(), { original: f, width: det.width, height: det.height, quad: det.quad, filter: det.quad ? settings.get('defaultFilter') : 'original' });
+        return createPage(library(), {
+          original: f,
+          width: det.width,
+          height: det.height,
+          quad: det.quad,
+          filter: det.quad ? settings.get('defaultFilter') : 'original',
+        });
       });
-      if (page) await commit(doc.pages.map((x) => (x.id === p.id ? page : x)), 'Page remplacée');
+      if (page)
+        await commit(
+          doc.pages.map((x) => (x.id === p.id ? page : x)),
+          'Page remplacée',
+        );
     };
     input.click();
   };
@@ -173,7 +198,15 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
         const out: Page[] = [];
         for (const [i, f] of files.entries()) {
           const det = await processing.detect(f);
-          out.push(await createPage(library(), { original: f, width: det.width, height: det.height, quad: det.quad, filter: det.quad ? settings.get('defaultFilter') : 'original' }));
+          out.push(
+            await createPage(library(), {
+              original: f,
+              width: det.width,
+              height: det.height,
+              quad: det.quad,
+              filter: det.quad ? settings.get('defaultFilter') : 'original',
+            }),
+          );
           progress((i + 1) / files.length);
         }
         return out;
@@ -198,16 +231,34 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
     { icon: 'rotateCw', label: 'Pivoter à droite', onSelect: () => void rotate([p.id], 1) },
     { icon: 'rotateCcw', label: 'Pivoter à gauche', onSelect: () => void rotate([p.id], 3) },
     { icon: 'signature', label: 'Annoter / signer', onSelect: () => navigate(`/doc/${doc.id}/page/${p.id}?tab=annotate`) },
-    { icon: 'text', label: p.ocr || p.text ? 'Texte de la page' : 'Reconnaître le texte (OCR)', onSelect: () => navigate(`/doc/${doc.id}/page/${p.id}?tab=text`) },
+    {
+      icon: 'text',
+      label: p.ocr || p.text ? 'Texte de la page' : 'Reconnaître le texte (OCR)',
+      onSelect: () => navigate(`/doc/${doc.id}/page/${p.id}?tab=text`),
+    },
     { icon: 'copy', label: 'Dupliquer', onSelect: () => void duplicate(p, index) },
     { icon: 'scan', label: 'Rescanner cette page', onSelect: () => scanTo({ docId: doc.id, replacePageId: p.id }) },
     { icon: 'image', label: 'Remplacer par une image', onSelect: () => void replaceWithImage(p) },
-    { icon: 'split', label: 'Extraire dans un nouveau document', onSelect: async () => {
-      const d = await withBusy('Extraction…', () => extractPages(library(), doc.id, [index]));
-      if (d) toast('Page extraite', 'success', { label: 'Ouvrir', run: () => navigate(`/doc/${d.id}`) });
-    } },
-    { icon: 'back', label: 'Déplacer avant', disabled: index === 0, onSelect: () => void commit(movePage(doc.pages, index, index - 1), 'Réorganisation') },
-    { icon: 'back', label: 'Déplacer après', disabled: index === doc.pages.length - 1, onSelect: () => void commit(movePage(doc.pages, index, index + 1), 'Réorganisation') },
+    {
+      icon: 'split',
+      label: 'Extraire dans un nouveau document',
+      onSelect: async () => {
+        const d = await withBusy('Extraction…', () => extractPages(library(), doc.id, [index]));
+        if (d) toast('Page extraite', 'success', { label: 'Ouvrir', run: () => navigate(`/doc/${d.id}`) });
+      },
+    },
+    {
+      icon: 'back',
+      label: 'Déplacer avant',
+      disabled: index === 0,
+      onSelect: () => void commit(movePage(doc.pages, index, index - 1), 'Réorganisation'),
+    },
+    {
+      icon: 'back',
+      label: 'Déplacer après',
+      disabled: index === doc.pages.length - 1,
+      onSelect: () => void commit(movePage(doc.pages, index, index + 1), 'Réorganisation'),
+    },
     { icon: 'trash', label: 'Supprimer la page', danger: true, onSelect: () => void deletePages([p.id]) },
   ];
 
@@ -218,48 +269,103 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
     { icon: 'tag', label: 'Étiquettes, notes et informations', onSelect: () => setDetails(true) },
     { icon: 'text', label: 'Reconnaître le texte (OCR)', hint: 'Traitement local, hors ligne', onSelect: () => void ocrFlow(doc.id) },
     { icon: 'wand', label: 'Même filtre pour toutes les pages', onSelect: () => setFilterAll(true) },
-    { icon: 'copy', label: 'Dupliquer le document', onSelect: async () => {
-      const d = await withBusy('Duplication…', () => lib.duplicate(doc.id));
-      if (d) toast('Document dupliqué', 'success', { label: 'Ouvrir', run: () => navigate(`/doc/${d.id}`) });
-    } },
-    { icon: 'merge', label: 'Fusionner avec un autre document…', onSelect: async () => {
-      const others = lib.documents().filter((d) => d.id !== doc.id);
-      if (!others.length) return toast('Aucun autre document à fusionner', 'info');
-      const pick = await chooseDialog('Ajouter à la fin les pages de…', others.slice(0, 50).map((d) => ({ value: d.id, label: d.title, hint: `${d.pages.length} page(s) · ${formatDate(d.updatedAt)}` })));
-      if (!pick) return;
-      const merged = await withBusy('Fusion…', () => mergeDocuments(lib, [doc.id, pick], doc.title));
-      if (merged) {
-        toast('Nouveau document fusionné créé (les originaux sont conservés)', 'success');
-        navigate(`/doc/${merged.id}`);
-      }
-    } },
-    { icon: 'split', label: 'Diviser le document…', disabled: doc.pages.length < 2, onSelect: async () => {
-      const v = await promptDialog('Diviser', { message: 'Pages où commence chaque nouvelle partie (ex. « 3, 6 »), ou « tous les N » (ex. « tous les 2 »).', placeholder: '3, 6', confirmLabel: 'Diviser' });
-      if (!v) return;
-      const every = /tous\s+les\s+(\d+)/i.exec(v);
-      const parts = await withBusy('Division…', () => splitDocument(lib, doc.id, every ? { every: Number(every[1]) } : { startsAt: v.split(/[,; ]+/).map(Number).filter(Boolean) }));
-      if (parts) toast(`${parts.length} documents créés`, 'success');
-    } },
-    { icon: 'pages', label: 'Extraire des pages…', onSelect: async () => {
-      const v = await promptDialog('Extraire des pages', { message: `Pages à copier dans un nouveau document (1 à ${doc.pages.length}), ex. « 1-3, 5 ».`, confirmLabel: 'Extraire' });
-      if (!v) return;
-      try {
-        const idx = parsePageRanges(v, doc.pages.length);
-        const d = await withBusy('Extraction…', () => extractPages(lib, doc.id, idx));
-        if (d) toast('Pages extraites', 'success', { label: 'Ouvrir', run: () => navigate(`/doc/${d.id}`) });
-      } catch (e) {
-        toast(errorMessage(e), 'error');
-      }
-    } },
-    { icon: 'eraser', label: 'Supprimer les pages blanches', onSelect: async () => {
-      const ids = blankPageIds(doc);
-      if (!ids.length) return toast('Aucune page blanche détectée', 'info');
-      if (await confirmDialog(`${ids.length} page(s) blanche(s) détectée(s)`, 'Les supprimer du document ?', { confirmLabel: 'Supprimer', danger: true })) await deletePages(ids);
-    } },
-    { icon: 'trash', label: 'Mettre à la corbeille', danger: true, onSelect: async () => {
-      await trashWithUndo([doc.id]);
-      navigate('/', { replace: true });
-    } },
+    {
+      icon: 'copy',
+      label: 'Dupliquer le document',
+      onSelect: async () => {
+        const d = await withBusy('Duplication…', () => lib.duplicate(doc.id));
+        if (d) toast('Document dupliqué', 'success', { label: 'Ouvrir', run: () => navigate(`/doc/${d.id}`) });
+      },
+    },
+    {
+      icon: 'merge',
+      label: 'Fusionner avec un autre document…',
+      onSelect: async () => {
+        const others = lib.documents().filter((d) => d.id !== doc.id);
+        if (!others.length) return toast('Aucun autre document à fusionner', 'info');
+        const pick = await chooseDialog(
+          'Ajouter à la fin les pages de…',
+          others.slice(0, 50).map((d) => ({ value: d.id, label: d.title, hint: `${d.pages.length} page(s) · ${formatDate(d.updatedAt)}` })),
+        );
+        if (!pick) return;
+        const merged = await withBusy('Fusion…', () => mergeDocuments(lib, [doc.id, pick], doc.title));
+        if (merged) {
+          toast('Nouveau document fusionné créé (les originaux sont conservés)', 'success');
+          navigate(`/doc/${merged.id}`);
+        }
+      },
+    },
+    {
+      icon: 'split',
+      label: 'Diviser le document…',
+      disabled: doc.pages.length < 2,
+      onSelect: async () => {
+        const v = await promptDialog('Diviser', {
+          message: 'Pages où commence chaque nouvelle partie (ex. « 3, 6 »), ou « tous les N » (ex. « tous les 2 »).',
+          placeholder: '3, 6',
+          confirmLabel: 'Diviser',
+        });
+        if (!v) return;
+        const every = /tous\s+les\s+(\d+)/i.exec(v);
+        const parts = await withBusy('Division…', () =>
+          splitDocument(
+            lib,
+            doc.id,
+            every
+              ? { every: Number(every[1]) }
+              : {
+                  startsAt: v
+                    .split(/[,; ]+/)
+                    .map(Number)
+                    .filter(Boolean),
+                },
+          ),
+        );
+        if (parts) toast(`${parts.length} documents créés`, 'success');
+      },
+    },
+    {
+      icon: 'pages',
+      label: 'Extraire des pages…',
+      onSelect: async () => {
+        const v = await promptDialog('Extraire des pages', {
+          message: `Pages à copier dans un nouveau document (1 à ${doc.pages.length}), ex. « 1-3, 5 ».`,
+          confirmLabel: 'Extraire',
+        });
+        if (!v) return;
+        try {
+          const idx = parsePageRanges(v, doc.pages.length);
+          const d = await withBusy('Extraction…', () => extractPages(lib, doc.id, idx));
+          if (d) toast('Pages extraites', 'success', { label: 'Ouvrir', run: () => navigate(`/doc/${d.id}`) });
+        } catch (e) {
+          toast(errorMessage(e), 'error');
+        }
+      },
+    },
+    {
+      icon: 'eraser',
+      label: 'Supprimer les pages blanches',
+      onSelect: async () => {
+        const ids = blankPageIds(doc);
+        if (!ids.length) return toast('Aucune page blanche détectée', 'info');
+        if (
+          await confirmDialog(`${ids.length} page(s) blanche(s) détectée(s)`, 'Les supprimer du document ?', {
+            confirmLabel: 'Supprimer',
+            danger: true,
+          })
+        )
+          await deletePages(ids);
+      },
+    },
+    {
+      icon: 'trash',
+      label: 'Mettre à la corbeille',
+      danger: true,
+      onSelect: async () => {
+        await trashWithUndo([doc.id]);
+        navigate('/', { replace: true });
+      },
+    },
   ];
 
   const ocrCount = doc.pages.filter((p) => p.ocr).length;
@@ -273,12 +379,19 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
             {doc.title}
           </button>
         </h1>
-        <IconButton icon="star" label={doc.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} active={doc.favorite} onClick={() => void lib.toggleFavorite(doc.id)} />
+        <IconButton
+          icon="star"
+          label={doc.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          active={doc.favorite}
+          onClick={() => void lib.toggleFavorite(doc.id)}
+        />
         <IconButton icon="more" label="Plus d’actions" onClick={() => setMenu(true)} />
       </header>
 
       <div class="doc-summary">
-        <span>{doc.pages.length} page{doc.pages.length > 1 ? 's' : ''}</span>
+        <span>
+          {doc.pages.length} page{doc.pages.length > 1 ? 's' : ''}
+        </span>
         <span>{formatBytes(doc.sizeBytes)}</span>
         {doc.folderId ? (
           <a href={`#/folders/${doc.folderId}`}>
@@ -286,7 +399,11 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
           </a>
         ) : null}
         {doc.kind ? <span class="pill pill-accent">{KIND_LABELS[doc.kind]}</span> : null}
-        {ocrCount ? <span class="pill pill-primary">OCR {ocrCount}/{doc.pages.length}</span> : null}
+        {ocrCount ? (
+          <span class="pill pill-primary">
+            OCR {ocrCount}/{doc.pages.length}
+          </span>
+        ) : null}
         {doc.tags.map((t) => (
           <span class="pill" key={t}>
             #{t}
@@ -309,7 +426,12 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
         <IconButton icon="image" label="Ajouter des images" onClick={addImages} />
         <IconButton icon="undo" label="Annuler (Ctrl+Z)" disabled={!undo.current?.canUndo} onClick={() => void undoOp()} />
         <IconButton icon="redo" label="Rétablir (Ctrl+Y)" disabled={!undo.current?.canRedo} onClick={() => void redo()} />
-        <IconButton icon="check" label={selected.size ? 'Terminer la sélection' : 'Sélectionner des pages'} active={selected.size > 0} onClick={() => setSelected(selected.size ? new Set() : new Set([doc.pages[0]?.id ?? '']))} />
+        <IconButton
+          icon="check"
+          label={selected.size ? 'Terminer la sélection' : 'Sélectionner des pages'}
+          active={selected.size > 0}
+          onClick={() => setSelected(selected.size ? new Set() : new Set([doc.pages[0]?.id ?? '']))}
+        />
       </div>
       <p class="muted small hint-line">Touchez une page pour la modifier. Maintenez-la puis glissez pour la déplacer.</p>
 
@@ -326,12 +448,23 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
         <div class="selection-bar" role="toolbar" aria-label="Actions sur les pages sélectionnées">
           <strong style={{ flex: 1 }}>{selected.size} page(s)</strong>
           <IconButton icon="rotateCw" label="Pivoter" onClick={() => void rotate(selIds, 1)} />
-          <IconButton icon="wand" label="Filtre" onClick={async () => {
-            const f = await chooseDialog('Filtre pour la sélection', FILTERS.map((x) => ({ value: x.id, label: x.label, hint: x.description })));
-            if (f) await applyFilterTo(selIds, f as FilterId);
-          }} />
+          <IconButton
+            icon="wand"
+            label="Filtre"
+            onClick={async () => {
+              const f = await chooseDialog(
+                'Filtre pour la sélection',
+                FILTERS.map((x) => ({ value: x.id, label: x.label, hint: x.description })),
+              );
+              if (f) await applyFilterTo(selIds, f as FilterId);
+            }}
+          />
           <IconButton icon="text" label="OCR" onClick={() => void ocrFlow(doc.id, selIds, true)} />
-          <IconButton icon="share" label="Exporter la sélection" onClick={() => setExportOpen({ pageIds: doc.pages.filter((p) => selected.has(p.id)).map((p) => p.id) })} />
+          <IconButton
+            icon="share"
+            label="Exporter la sélection"
+            onClick={() => setExportOpen({ pageIds: doc.pages.filter((p) => selected.has(p.id)).map((p) => p.id) })}
+          />
           <IconButton icon="trash" label="Supprimer" onClick={() => void deletePages(selIds)} />
           <IconButton icon="close" label="Annuler la sélection" onClick={() => setSelected(new Set())} />
         </div>
@@ -345,7 +478,12 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
       </Sheet>
       <Sheet open={filterAll} onClose={() => setFilterAll(false)} title="Filtre pour toutes les pages">
         <ActionList
-          items={FILTERS.map((f) => ({ icon: 'wand' as const, label: f.label, hint: f.description, onSelect: () => void applyFilterTo('all', f.id) }))}
+          items={FILTERS.map((f) => ({
+            icon: 'wand' as const,
+            label: f.label,
+            hint: f.description,
+            onSelect: () => void applyFilterTo('all', f.id),
+          }))}
           onDone={() => setFilterAll(false)}
         />
       </Sheet>

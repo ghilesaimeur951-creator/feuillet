@@ -238,10 +238,32 @@ export function AnnotateEditor({ page, onSave }: { page: Page; onSave: (a: Annot
     const key = isDraft ? 'draft' : a.id;
     switch (a.type) {
       case 'ink':
-        return <polyline key={key} points={a.points.map((p) => `${p.x * W},${p.y * H}`).join(' ')} fill="none" stroke={a.color} stroke-width={a.width * W} stroke-linecap="round" stroke-linejoin="round" opacity={a.opacity} />;
+        return (
+          <polyline
+            key={key}
+            points={a.points.map((p) => `${p.x * W},${p.y * H}`).join(' ')}
+            fill="none"
+            stroke={a.color}
+            stroke-width={a.width * W}
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            opacity={a.opacity}
+          />
+        );
       case 'highlight': {
         const b = bbox(a, aspect);
-        return <rect key={key} x={b.x * W} y={b.y * H} width={b.w * W} height={b.h * H} fill={a.color} opacity={0.38} style={{ mixBlendMode: 'multiply' }} />;
+        return (
+          <rect
+            key={key}
+            x={b.x * W}
+            y={b.y * H}
+            width={b.w * W}
+            height={b.h * H}
+            fill={a.color}
+            opacity={0.38}
+            style={{ mixBlendMode: 'multiply' }}
+          />
+        );
       }
       case 'rect':
       case 'ellipse': {
@@ -249,7 +271,16 @@ export function AnnotateEditor({ page, onSave }: { page: Page; onSave: (a: Annot
         return a.type === 'rect' ? (
           <rect key={key} x={b.x * W} y={b.y * H} width={b.w * W} height={b.h * H} fill="none" stroke={a.color} stroke-width={a.width * W} />
         ) : (
-          <ellipse key={key} cx={(b.x + b.w / 2) * W} cy={(b.y + b.h / 2) * H} rx={(b.w * W) / 2} ry={(b.h * H) / 2} fill="none" stroke={a.color} stroke-width={a.width * W} />
+          <ellipse
+            key={key}
+            cx={(b.x + b.w / 2) * W}
+            cy={(b.y + b.h / 2) * H}
+            rx={(b.w * W) / 2}
+            ry={(b.h * H) / 2}
+            fill="none"
+            stroke={a.color}
+            stroke-width={a.width * W}
+          />
         );
       }
       case 'arrow': {
@@ -270,7 +301,15 @@ export function AnnotateEditor({ page, onSave }: { page: Page; onSave: (a: Annot
       }
       case 'text':
         return (
-          <text key={key} x={a.x * W} y={a.y * H} fill={a.color} font-size={a.size * W} dominant-baseline="hanging" font-family="system-ui, sans-serif">
+          <text
+            key={key}
+            x={a.x * W}
+            y={a.y * H}
+            fill={a.color}
+            font-size={a.size * W}
+            dominant-baseline="hanging"
+            font-family="system-ui, sans-serif"
+          >
             {a.text.split('\n').map((l, i) => (
               <tspan key={i} x={a.x * W} dy={i ? a.size * W * 1.25 : 0}>
                 {l}
@@ -290,7 +329,10 @@ export function AnnotateEditor({ page, onSave }: { page: Page; onSave: (a: Annot
   return (
     <div class="editor-split">
       <div class="editor-stage">
-        <div class="annot-box" style={{ aspectRatio: `${W} / ${H}`, width: `min(100%, calc((100dvh - var(--crop-chrome, 240px)) * ${aspect.toFixed(4)}))` }}>
+        <div
+          class="annot-box"
+          style={{ aspectRatio: `${W} / ${H}`, width: `min(100%, calc((100dvh - var(--crop-chrome, 240px)) * ${aspect.toFixed(4)}))` }}
+        >
           {src ? <img src={src} alt="Page à annoter" draggable={false} /> : null}
           <svg
             ref={svgRef}
@@ -307,8 +349,18 @@ export function AnnotateEditor({ page, onSave }: { page: Page; onSave: (a: Annot
             {draft ? render(draft, true) : null}
             {sb ? (
               <g class="annot-selection">
-                <rect x={sb.x * W - 4} y={sb.y * H - 4} width={sb.w * W + 8} height={sb.h * H + 8} fill="none" stroke-width={Math.max(2, W * 0.002)} stroke-dasharray={`${W * 0.01} ${W * 0.006}`} />
-                {selected && selected.type !== 'ink' && selected.type !== 'arrow' && selected.type !== 'text' ? <circle cx={(sb.x + sb.w) * W} cy={(sb.y + sb.h) * H} r={handleR} /> : null}
+                <rect
+                  x={sb.x * W - 4}
+                  y={sb.y * H - 4}
+                  width={sb.w * W + 8}
+                  height={sb.h * H + 8}
+                  fill="none"
+                  stroke-width={Math.max(2, W * 0.002)}
+                  stroke-dasharray={`${W * 0.01} ${W * 0.006}`}
+                />
+                {selected && selected.type !== 'ink' && selected.type !== 'arrow' && selected.type !== 'text' ? (
+                  <circle cx={(sb.x + sb.w) * W} cy={(sb.y + sb.h) * H} r={handleR} />
+                ) : null}
               </g>
             ) : null}
           </svg>
@@ -322,11 +374,26 @@ export function AnnotateEditor({ page, onSave }: { page: Page; onSave: (a: Annot
         </div>
         <div class="row" role="group" aria-label="Couleur">
           {COLORS.map((c) => (
-            <button type="button" key={c} class={`color-dot ${c === color ? 'is-active' : ''}`} style={{ background: c }} aria-label={`Couleur ${c}`} aria-pressed={c === color} onClick={() => setColor(c)} />
+            <button
+              type="button"
+              key={c}
+              class={`color-dot ${c === color ? 'is-active' : ''}`}
+              style={{ background: c }}
+              aria-label={`Couleur ${c}`}
+              aria-pressed={c === color}
+              onClick={() => setColor(c)}
+            />
           ))}
           <span class="spacer" />
           {WIDTHS.map((w, i) => (
-            <button type="button" key={w} class={`width-dot ${w === width ? 'is-active' : ''}`} aria-label={['Trait fin', 'Trait moyen', 'Trait épais'][i]} aria-pressed={w === width} onClick={() => setWidth(w)}>
+            <button
+              type="button"
+              key={w}
+              class={`width-dot ${w === width ? 'is-active' : ''}`}
+              aria-label={['Trait fin', 'Trait moyen', 'Trait épais'][i]}
+              aria-pressed={w === width}
+              onClick={() => setWidth(w)}
+            >
               <span style={{ width: `${6 + i * 5}px`, height: `${6 + i * 5}px` }} />
             </button>
           ))}

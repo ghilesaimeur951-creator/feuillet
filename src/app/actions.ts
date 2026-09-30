@@ -56,7 +56,11 @@ export async function importFlow(files: File[], folderId: string | null = null):
       onProgress: (p) => setBusy({ label: p.file ? `${p.file} — ${p.step}` : p.step, progress: p.value }),
       askPassword: async (name, wrong) => {
         setBusy(null);
-        const pw = await promptDialog(wrong ? 'Mot de passe incorrect' : 'PDF protégé', { message: `« ${name} » est protégé. Saisissez son mot de passe pour l’importer.`, inputType: 'password', confirmLabel: 'Déverrouiller' });
+        const pw = await promptDialog(wrong ? 'Mot de passe incorrect' : 'PDF protégé', {
+          message: `« ${name} » est protégé. Saisissez son mot de passe pour l’importer.`,
+          inputType: 'password',
+          confirmLabel: 'Déverrouiller',
+        });
         setBusy({ label: 'Import en cours…' });
         return pw;
       },
@@ -123,7 +127,9 @@ export async function ocrFlow(docId: string, pageIds?: string[], force = false):
   if (!doc) return;
   const count = pageIds?.length ?? doc.pages.filter((p) => force || !p.ocr).length;
   if (count === 0) {
-    const redo = await confirmDialog('Texte déjà reconnu', 'Toutes les pages ont déjà été traitées. Relancer la reconnaissance ?', { confirmLabel: 'Relancer' });
+    const redo = await confirmDialog('Texte déjà reconnu', 'Toutes les pages ont déjà été traitées. Relancer la reconnaissance ?', {
+      confirmLabel: 'Relancer',
+    });
     if (!redo) return;
     return ocrFlow(docId, undefined, true);
   }
@@ -131,7 +137,8 @@ export async function ocrFlow(docId: string, pageIds?: string[], force = false):
     runOcr(lib, docId, {
       ...(pageIds ? { pageIds } : {}),
       force,
-      onProgress: (done, total, p) => progress(done / Math.max(1, total), p ? `Page ${Math.min(total, Math.floor(done) + 1)}/${total} — ${p.status}` : undefined),
+      onProgress: (done, total, p) =>
+        progress(done / Math.max(1, total), p ? `Page ${Math.min(total, Math.floor(done) + 1)}/${total} — ${p.status}` : undefined),
     }),
   );
   if (r) toast(`Texte reconnu sur ${count} page(s)`, 'success');

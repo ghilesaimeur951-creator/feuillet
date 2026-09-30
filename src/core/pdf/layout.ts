@@ -22,13 +22,7 @@ export interface PageLayout {
  * Computes the page box and the centred "contain" placement of an image.
  * `auto` size gives the page the image's aspect ratio (long side = A4 long side) plus margins.
  */
-export function layoutPage(
-  imageWidth: number,
-  imageHeight: number,
-  size: PageSizeId,
-  orientation: OrientationId,
-  margin: number,
-): PageLayout {
+export function layoutPage(imageWidth: number, imageHeight: number, size: PageSizeId, orientation: OrientationId, margin: number): PageLayout {
   const landscapeImage = imageWidth > imageHeight;
   if (size === 'auto') {
     const long = 841.89 - 2 * margin;

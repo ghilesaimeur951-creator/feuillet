@@ -19,7 +19,14 @@ export interface PageGridProps {
 export function PageGrid({ pages, selected, onOpen, onToggle, onMove, selecting }: PageGridProps) {
   const gridRef = useRef<HTMLOListElement>(null);
   const [drag, setDrag] = useState<{ from: number; over: number; x: number; y: number; w: number; h: number; ox: number; oy: number } | null>(null);
-  const pending = useRef<{ index: number; x: number; y: number; timer: ReturnType<typeof setTimeout> | null; pointer: string; el: HTMLElement } | null>(null);
+  const pending = useRef<{
+    index: number;
+    x: number;
+    y: number;
+    timer: ReturnType<typeof setTimeout> | null;
+    pointer: string;
+    el: HTMLElement;
+  } | null>(null);
   const suppressClick = useRef(false);
 
   const targetIndex = (x: number, y: number): number => {
@@ -110,13 +117,21 @@ export function PageGrid({ pages, selected, onOpen, onToggle, onMove, selecting 
                 onPointerDown={(e) => {
                   if (e.button !== 0) return;
                   const el = e.currentTarget as HTMLElement;
-                  const entry = { index: pi, x: e.clientX, y: e.clientY, timer: null as ReturnType<typeof setTimeout> | null, pointer: e.pointerType, el };
-                  if (e.pointerType !== 'mouse') entry.timer = setTimeout(() => {
-                    if (pending.current === entry) {
-                      begin(pi, entry.x, entry.y, el);
-                      pending.current = null;
-                    }
-                  }, 380);
+                  const entry = {
+                    index: pi,
+                    x: e.clientX,
+                    y: e.clientY,
+                    timer: null as ReturnType<typeof setTimeout> | null,
+                    pointer: e.pointerType,
+                    el,
+                  };
+                  if (e.pointerType !== 'mouse')
+                    entry.timer = setTimeout(() => {
+                      if (pending.current === entry) {
+                        begin(pi, entry.x, entry.y, el);
+                        pending.current = null;
+                      }
+                    }, 380);
                   pending.current = entry;
                 }}
                 onClick={() => {
@@ -155,7 +170,11 @@ export function PageGrid({ pages, selected, onOpen, onToggle, onMove, selecting 
         })}
       </ol>
       {drag ? (
-        <div class="drag-ghost" style={{ left: `${drag.x - drag.ox}px`, top: `${drag.y - drag.oy}px`, width: `${drag.w}px`, height: `${drag.h}px` }} aria-hidden="true">
+        <div
+          class="drag-ghost"
+          style={{ left: `${drag.x - drag.ox}px`, top: `${drag.y - drag.oy}px`, width: `${drag.w}px`, height: `${drag.h}px` }}
+          aria-hidden="true"
+        >
           <BlobImage id={(pages[drag.from] as Page).thumbBlobId} alt="" />
         </div>
       ) : null}

@@ -73,7 +73,13 @@ const PATHS = {
 
 export type IconName = keyof typeof PATHS;
 
-export function Icon({ name, size = 22, title, filled, ...rest }: { name: IconName; size?: number; title?: string; filled?: boolean } & JSX.SVGAttributes<SVGSVGElement>) {
+export function Icon({
+  name,
+  size = 22,
+  title,
+  filled,
+  ...rest
+}: { name: IconName; size?: number; title?: string; filled?: boolean } & JSX.SVGAttributes<SVGSVGElement>) {
   return (
     <svg
       width={size}

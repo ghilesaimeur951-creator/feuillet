@@ -42,7 +42,7 @@ declare module 'node:zlib' {
 }
 
 declare module 'node:fs' {
-  export function readFileSync(path: string): Uint8Array;
+  export function readFileSync(path: string): Uint8Array & { toString(encoding?: string): string };
   export function readFileSync(path: string, enc: 'utf8'): string;
   export function writeFileSync(path: string, data: string | Uint8Array): void;
   export function existsSync(path: string): boolean;
@@ -69,6 +69,10 @@ declare module 'node:child_process' {
     args: string[],
     opts?: { input?: Uint8Array | string; encoding?: 'utf8' },
   ): { status: number | null; stdout: string; stderr: string };
+}
+
+declare module 'node:url' {
+  export function fileURLToPath(url: string | URL): string;
 }
 
 declare module 'node:os' {

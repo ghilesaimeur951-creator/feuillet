@@ -33,7 +33,11 @@ export function resolvePath(baseDir: string, target: string): string {
 
 export function mimeFromPath(p: string): string {
   const ext = p.slice(p.lastIndexOf('.') + 1).toLowerCase();
-  return ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', bmp: 'image/bmp', webp: 'image/webp' } as Record<string, string>)[ext] ?? '';
+  return (
+    ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', bmp: 'image/bmp', webp: 'image/webp' } as Record<string, string>)[
+      ext
+    ] ?? ''
+  );
 }
 
 export async function readCoreTitle(zip: ZipArchive): Promise<string | undefined> {
@@ -62,7 +66,14 @@ function runsOf(p: XmlElement): TextRun[] {
           else if (rc.name === 'noBreakHyphen') text += '-';
         }
         if (text) runs.push({ text, ...(bold ? { bold } : {}), ...(italic ? { italic } : {}) });
-      } else if (c.name === 'hyperlink' || c.name === 'smartTag' || c.name === 'ins' || c.name === 'fldSimple' || c.name === 'sdtContent' || c.name === 'sdt') {
+      } else if (
+        c.name === 'hyperlink' ||
+        c.name === 'smartTag' ||
+        c.name === 'ins' ||
+        c.name === 'fldSimple' ||
+        c.name === 'sdtContent' ||
+        c.name === 'sdt'
+      ) {
         walk(c);
       }
     }
@@ -109,7 +120,13 @@ export async function parseDocx(zip: ZipArchive): Promise<ExtractedDocument> {
         const extent = descendants(p, 'extent')[0];
         const cx = extent ? Number(extent.attrs.cx) / 12700 : undefined;
         const cy = extent ? Number(extent.attrs.cy) / 12700 : undefined;
-        blocks.push({ kind: 'image', data: await zip.read(rel.target), mime: mimeFromPath(rel.target), ...(cx ? { widthPt: cx } : {}), ...(cy ? { heightPt: cy } : {}) });
+        blocks.push({
+          kind: 'image',
+          data: await zip.read(rel.target),
+          mime: mimeFromPath(rel.target),
+          ...(cx ? { widthPt: cx } : {}),
+          ...(cy ? { heightPt: cy } : {}),
+        });
       } else if (id) {
         warnings.push('Une image au format non pris en charge a été ignorée.');
       }
@@ -144,7 +161,11 @@ export async function parseDocx(zip: ZipArchive): Promise<ExtractedDocument> {
       const rows = children(el, 'tr').map((tr) =>
         children(tr, 'tc').map((tc) =>
           children(tc, 'p')
-            .map((p) => runsOf(p).map((r) => r.text).join(''))
+            .map((p) =>
+              runsOf(p)
+                .map((r) => r.text)
+                .join(''),
+            )
             .join('\n')
             .trim(),
         ),

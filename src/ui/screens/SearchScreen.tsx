@@ -51,14 +51,29 @@ export function SearchScreen({ initial }: { initial: string }) {
     if (!debounced.trim() && !kind && !days) return [];
     return lib.search(debounced, { ...(kind ? { type: KIND_LABELS[kind] } : {}), ...(days ? { from: Date.now() - days * 86400_000 } : {}) });
   }, [debounced, kind, days, lib.documents().length, lib]);
-  const kinds = [...new Set(lib.documents().map((d) => d.kind).filter((k): k is DocumentKind => !!k))];
+  const kinds = [
+    ...new Set(
+      lib
+        .documents()
+        .map((d) => d.kind)
+        .filter((k): k is DocumentKind => !!k),
+    ),
+  ];
 
   return (
     <div class="page">
       <header class="top-bar">
         <label class="search-field" style={{ flex: 1 }}>
           <Icon name="search" />
-          <input ref={input} type="search" value={q} placeholder="Ex. « facture EDF », « bail 2023 »…" aria-label="Rechercher" onInput={(e) => setQ((e.target as HTMLInputElement).value)} enterKeyHint="search" />
+          <input
+            ref={input}
+            type="search"
+            value={q}
+            placeholder="Ex. « facture EDF », « bail 2023 »…"
+            aria-label="Rechercher"
+            onInput={(e) => setQ((e.target as HTMLInputElement).value)}
+            enterKeyHint="search"
+          />
           {q ? <IconButton icon="close" label="Effacer la recherche" onClick={() => setQ('')} /> : null}
         </label>
       </header>
@@ -84,7 +99,8 @@ export function SearchScreen({ initial }: { initial: string }) {
 
       {!debounced.trim() && !kind && !days ? (
         <EmptyState icon="search" title="Recherche plein texte">
-          La recherche porte sur les titres, dossiers, étiquettes, notes, dates et le texte reconnu par l’OCR — sans tenir compte des accents ni des majuscules. Utilisez des guillemets pour une expression exacte.
+          La recherche porte sur les titres, dossiers, étiquettes, notes, dates et le texte reconnu par l’OCR — sans tenir compte des accents ni des
+          majuscules. Utilisez des guillemets pour une expression exacte.
         </EmptyState>
       ) : hits.length === 0 ? (
         <EmptyState icon="search" title="Aucun résultat">
@@ -98,7 +114,12 @@ export function SearchScreen({ initial }: { initial: string }) {
           <div class="doc-list search-hit">
             {hits.map((h) => (
               <div key={h.id}>
-                <DocCard doc={h.doc} mode="list" onOpen={(d) => navigate(`/doc/${d.id}`)} {...(h.doc.folderId ? { extra: `Dossier : ${lib.folderPath(h.doc.folderId)}` } : {})} />
+                <DocCard
+                  doc={h.doc}
+                  mode="list"
+                  onOpen={(d) => navigate(`/doc/${d.id}`)}
+                  {...(h.doc.folderId ? { extra: `Dossier : ${lib.folderPath(h.doc.folderId)}` } : {})}
+                />
                 {h.snippet ? (
                   <p class="snippet" style={{ margin: '4px 12px 8px' }}>
                     <Highlighted text={h.snippet} ranges={h.highlights} />

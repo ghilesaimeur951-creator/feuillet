@@ -24,7 +24,12 @@ async function boot() {
     root.innerHTML = '';
     render(<App />, root);
     if (session && !location.hash.startsWith('#/review') && !location.hash.startsWith('#/scan')) {
-      toast(`Un scan interrompu (${session.captures.length} page${session.captures.length > 1 ? 's' : ''}) peut être repris.`, 'info', { label: 'Reprendre', run: () => navigate('/review') }, 12000);
+      toast(
+        `Un scan interrompu (${session.captures.length} page${session.captures.length > 1 ? 's' : ''}) peut être repris.`,
+        'info',
+        { label: 'Reprendre', run: () => navigate('/review') },
+        12000,
+      );
     }
   } catch (e) {
     root.innerHTML = `<div class="fatal"><h1>Impossible de démarrer Feuillet</h1><p>${e instanceof Error ? e.message.replace(/[<>&]/g, '') : 'Erreur inconnue'}</p></div>`;

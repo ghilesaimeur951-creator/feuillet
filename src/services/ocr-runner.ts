@@ -18,7 +18,12 @@ export function isDefaultTitle(title: string): boolean {
 export async function runOcr(
   lib: Library,
   docId: string,
-  opts: { pageIds?: readonly string[]; force?: boolean; langs?: readonly string[]; onProgress?: (done: number, total: number, p?: OcrProgress) => void } = {},
+  opts: {
+    pageIds?: readonly string[];
+    force?: boolean;
+    langs?: readonly string[];
+    onProgress?: (done: number, total: number, p?: OcrProgress) => void;
+  } = {},
 ): Promise<DocumentRecord> {
   let doc = lib.get(docId);
   if (!doc) throw new Error('Document introuvable');

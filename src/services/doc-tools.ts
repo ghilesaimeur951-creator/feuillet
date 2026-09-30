@@ -48,7 +48,8 @@ export async function extractPages(lib: Library, docId: string, indexes: readonl
     if (p) pages.push(await copyPage(lib, p));
   }
   if (!pages.length) throw new Error('Aucune page à extraire');
-  const label = indexes.length === 1 ? `p. ${(indexes[0] as number) + 1}` : `p. ${(indexes[0] as number) + 1}-${(indexes[indexes.length - 1] as number) + 1}`;
+  const label =
+    indexes.length === 1 ? `p. ${(indexes[0] as number) + 1}` : `p. ${(indexes[0] as number) + 1}-${(indexes[indexes.length - 1] as number) + 1}`;
   return lib.createDocument({ title: title ?? `${doc.title} (${label})`, pages, source: 'split', folderId: doc.folderId, tags: [...doc.tags] });
 }
 
@@ -65,7 +66,14 @@ export async function splitDocument(lib: Library, docId: string, opts: { every?:
   const out: DocumentRecord[] = [];
   for (const [k, s] of starts.entries()) {
     const e = (starts[k + 1] ?? n) - 1;
-    out.push(await extractPages(lib, docId, Array.from({ length: e - s + 1 }, (_, i) => s + i), `${doc.title} (partie ${k + 1})`));
+    out.push(
+      await extractPages(
+        lib,
+        docId,
+        Array.from({ length: e - s + 1 }, (_, i) => s + i),
+        `${doc.title} (partie ${k + 1})`,
+      ),
+    );
   }
   return out;
 }

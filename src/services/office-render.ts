@@ -22,7 +22,10 @@ export interface RenderedOfficePage {
  * Converts an extracted Office/TXT document into real page images (A4 at 150 dpi) with their
  * text and word positions (so the exported PDF keeps a selectable, searchable text layer).
  */
-export async function renderExtractedDocument(doc: ExtractedDocument, onProgress?: (done: number, total: number) => void): Promise<RenderedOfficePage[]> {
+export async function renderExtractedDocument(
+  doc: ExtractedDocument,
+  onProgress?: (done: number, total: number) => void,
+): Promise<RenderedOfficePage[]> {
   // Decode embedded images first (the layout engine needs their sizes synchronously).
   const images = new Map<number, ImageBitmap>();
   for (const [i, b] of doc.blocks.entries()) {

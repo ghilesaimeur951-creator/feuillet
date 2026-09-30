@@ -27,7 +27,10 @@ export function FoldersScreen({ folderId }: { folderId: string | null }) {
   }
 
   const create = async () => {
-    const name = await promptDialog(folder ? `Nouveau sous-dossier de « ${folder.name} »` : 'Nouveau dossier', { placeholder: 'Nom du dossier', confirmLabel: 'Créer' });
+    const name = await promptDialog(folder ? `Nouveau sous-dossier de « ${folder.name} »` : 'Nouveau dossier', {
+      placeholder: 'Nom du dossier',
+      confirmLabel: 'Créer',
+    });
     if (!name) return;
     try {
       await lib.createFolder(name, folderId);
@@ -49,7 +52,13 @@ export function FoldersScreen({ folderId }: { folderId: string | null }) {
       icon: 'folder' as const,
       label: 'Déplacer',
       onSelect: async () => {
-        const options = [{ value: '__root', label: 'Racine' }, ...lib.folders().filter((x) => x.id !== f.id).map((x) => ({ value: x.id, label: lib.folderPath(x.id) }))];
+        const options = [
+          { value: '__root', label: 'Racine' },
+          ...lib
+            .folders()
+            .filter((x) => x.id !== f.id)
+            .map((x) => ({ value: x.id, label: lib.folderPath(x.id) })),
+        ];
         const c = await chooseDialog(`Déplacer « ${f.name} » vers…`, options);
         if (c) await lib.moveFolder(f.id, c === '__root' ? null : c).catch((e: unknown) => toast(errorMessage(e), 'error'));
       },
@@ -60,7 +69,13 @@ export function FoldersScreen({ folderId }: { folderId: string | null }) {
       danger: true,
       onSelect: async () => {
         const n = lib.documentsInFolder(f.id).length;
-        if (await confirmDialog(`Supprimer « ${f.name} » ?`, `Le dossier, ses sous-dossiers et leurs documents (${n} ici) iront dans la corbeille. Vous pourrez les restaurer pendant 30 jours.`, { confirmLabel: 'Mettre à la corbeille', danger: true })) {
+        if (
+          await confirmDialog(
+            `Supprimer « ${f.name} » ?`,
+            `Le dossier, ses sous-dossiers et leurs documents (${n} ici) iront dans la corbeille. Vous pourrez les restaurer pendant 30 jours.`,
+            { confirmLabel: 'Mettre à la corbeille', danger: true },
+          )
+        ) {
           await lib.trashFolder(f.id);
           toast('Dossier placé dans la corbeille', 'info', { label: 'Annuler', run: () => void lib.restoreFolder(f.id) });
           if (f.id === folderId) navigate(f.parentId ? `/folders/${f.parentId}` : '/folders', { replace: true });
@@ -72,7 +87,9 @@ export function FoldersScreen({ folderId }: { folderId: string | null }) {
   return (
     <div class="page">
       <header class="top-bar">
-        {folder ? <IconButton icon="back" label="Dossier parent" onClick={() => navigate(folder.parentId ? `/folders/${folder.parentId}` : '/folders')} /> : null}
+        {folder ? (
+          <IconButton icon="back" label="Dossier parent" onClick={() => navigate(folder.parentId ? `/folders/${folder.parentId}` : '/folders')} />
+        ) : null}
         <h1>{folder ? folder.name : 'Dossiers'}</h1>
         {folder ? <IconButton icon="more" label="Actions du dossier" onClick={() => setMenu(folder)} /> : null}
         <IconButton icon="folderPlus" label="Nouveau dossier" onClick={() => void create()} />
@@ -140,7 +157,9 @@ export function FoldersScreen({ folderId }: { folderId: string | null }) {
             </>
           }
         >
-          {folder ? 'Scannez ou importez un document directement dans ce dossier, ou déplacez-y des documents existants.' : 'Classez vos documents par thème : Administratif, Banque, Santé…'}
+          {folder
+            ? 'Scannez ou importez un document directement dans ce dossier, ou déplacez-y des documents existants.'
+            : 'Classez vos documents par thème : Administratif, Banque, Santé…'}
         </EmptyState>
       ) : null}
 

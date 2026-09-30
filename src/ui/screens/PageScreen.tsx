@@ -28,16 +28,28 @@ function CropTab({ doc, page }: { doc: DocumentRecord; page: Page }) {
   const save = async () => {
     const r = await withBusy('Redressement de la page…', () => rerenderPage(library(), page, { quad, rotation }));
     if (r) {
-      await savePages(doc, doc.pages.map((p) => (p.id === page.id ? r : p)), 'Recadrage');
+      await savePages(
+        doc,
+        doc.pages.map((p) => (p.id === page.id ? r : p)),
+        'Recadrage',
+      );
       toast('Recadrage appliqué', 'success');
       goBack(`/doc/${doc.id}`);
     }
   };
   return (
     <div class="editor-split">
-      <div class="editor-stage">{url ? <CropEditor src={url} width={page.originalWidth} height={page.originalHeight} quad={quad} onChange={setQuad} /> : <div class="spinner" />}</div>
+      <div class="editor-stage">
+        {url ? (
+          <CropEditor src={url} width={page.originalWidth} height={page.originalHeight} quad={quad} onChange={setQuad} />
+        ) : (
+          <div class="spinner" />
+        )}
+      </div>
       <div class="editor-panel">
-        <p class="muted small">Déplacez les quatre coins sur les bords du document. La perspective est recalculée à partir de ces points (homographie).</p>
+        <p class="muted small">
+          Déplacez les quatre coins sur les bords du document. La perspective est recalculée à partir de ces points (homographie).
+        </p>
         <div class="row">
           <Button
             icon="wand"
@@ -105,7 +117,11 @@ export function PageScreen({ docId, pageId, tab }: { docId: string; pageId: stri
       return map;
     });
     if (!updated) return;
-    await savePages(doc, doc.pages.map((p) => updated.get(p.id) ?? p), 'Filtre');
+    await savePages(
+      doc,
+      doc.pages.map((p) => updated.get(p.id) ?? p),
+      'Filtre',
+    );
     toast(all ? 'Filtre appliqué à toutes les pages' : 'Filtre appliqué', 'success');
     goBack(`/doc/${doc.id}`);
   };
@@ -114,7 +130,11 @@ export function PageScreen({ docId, pageId, tab }: { docId: string; pageId: stri
     try {
       const next: Page = { ...page, annotations };
       next.thumbBlobId = await library().putBlob(await annotatedThumb(library(), next));
-      await savePages(doc, doc.pages.map((p) => (p.id === page.id ? next : p)), 'Annotations');
+      await savePages(
+        doc,
+        doc.pages.map((p) => (p.id === page.id ? next : p)),
+        'Annotations',
+      );
       toast('Annotations enregistrées', 'success');
       goBack(`/doc/${doc.id}`);
     } catch (e) {

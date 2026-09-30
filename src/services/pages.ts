@@ -36,7 +36,16 @@ export async function createPage(lib: Library, src: PageSource): Promise<Page> {
   const filter = src.filter ?? 'original';
   const adjustments = src.adjustments ?? NEUTRAL_ADJUSTMENTS;
   const rotation = src.rotation ?? 0;
-  const r = await processing.render({ original: src.original, quad: src.quad, rotation, filter, adjustments, maxSide: maxSide(), quality: 0.9, snapRatio: src.snapRatio !== false });
+  const r = await processing.render({
+    original: src.original,
+    quad: src.quad,
+    rotation,
+    filter,
+    adjustments,
+    maxSide: maxSide(),
+    quality: 0.9,
+    snapRatio: src.snapRatio !== false,
+  });
   const originalBlobId = src.originalBlobId ?? (await lib.putBlob(src.original));
   return {
     id: newId('p'),
@@ -63,7 +72,11 @@ export async function createPage(lib: Library, src: PageSource): Promise<Page> {
  * Re-renders a page after a change of crop, rotation or filter. Returns a new Page object with new
  * blob ids (old blobs are garbage-collected later, so undo keeps working).
  */
-export async function rerenderPage(lib: Library, page: Page, changes: Partial<Pick<Page, 'quad' | 'rotation' | 'filter' | 'adjustments'>>): Promise<Page> {
+export async function rerenderPage(
+  lib: Library,
+  page: Page,
+  changes: Partial<Pick<Page, 'quad' | 'rotation' | 'filter' | 'adjustments'>>,
+): Promise<Page> {
   const original = await lib.getBlob(page.originalBlobId);
   if (!original) throw new Error('Image originale introuvable');
   const next = { ...page, ...changes };
@@ -78,7 +91,7 @@ export async function rerenderPage(lib: Library, page: Page, changes: Partial<Pi
     cacheKey: page.originalBlobId,
   });
   const geometryChanged = 'quad' in changes && JSON.stringify(changes.quad) !== JSON.stringify(page.quad);
-  const turns = ((next.rotation - page.rotation) % 4 + 4) % 4;
+  const turns = (((next.rotation - page.rotation) % 4) + 4) % 4;
   const result: Page = {
     ...next,
     processedBlobId: await lib.putBlob(r.processed),

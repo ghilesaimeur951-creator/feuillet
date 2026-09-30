@@ -50,7 +50,9 @@ describe('ZIP', () => {
 
 describe('XML', () => {
   test('entités, CDATA, commentaires, DOCTYPE ignoré (pas d’XXE)', () => {
-    const x = parseXml('<?xml version="1.0"?><!DOCTYPE x [<!ENTITY e "BOOM">]><!-- c --><a:r xmlns:a="u" a:v="1 &amp; 2"><t>&lt;b&gt; &#233;&#x20AC;</t><![CDATA[<raw>]]><t>&e;</t></a:r>');
+    const x = parseXml(
+      '<?xml version="1.0"?><!DOCTYPE x [<!ENTITY e "BOOM">]><!-- c --><a:r xmlns:a="u" a:v="1 &amp; 2"><t>&lt;b&gt; &#233;&#x20AC;</t><![CDATA[<raw>]]><t>&e;</t></a:r>',
+    );
     expect(x.name).toBe('r');
     expect(x.attrs.v).toBe('1 & 2');
     expect(textContent(x)).toBe('<b> é€<raw>&e;');
@@ -127,7 +129,13 @@ describe('mise en page des documents convertis', () => {
         { kind: 'heading', level: 1, runs: [{ text: 'Titre' }] },
         ...Array.from({ length: 120 }, (_, i) => ({ kind: 'paragraph' as const, runs: [{ text: `Ligne numéro ${i} avec du texte.` }] })),
         { kind: 'pagebreak' },
-        { kind: 'table', rows: [['A', 'B'], ['1', '2']] },
+        {
+          kind: 'table',
+          rows: [
+            ['A', 'B'],
+            ['1', '2'],
+          ],
+        },
       ],
     };
     const pages = layoutDocument(doc, { width: 600, height: 800, margin: 50, baseSize: 12, lineHeight: 1.4, measure, imageSize: () => null });

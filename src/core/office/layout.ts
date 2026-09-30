@@ -159,7 +159,11 @@ export function layoutDocument(doc: ExtractedDocument, o: LayoutOptions): LaidOu
     page.text += `${line.items.map((i) => i.text).join('')}\n`;
     y += line.height;
   }
-  function paragraph(runs: readonly TextRun[], size: number, opts: { bold?: boolean; indent?: number; prefix?: string; align?: 'left' | 'center' | 'right'; color?: string } = {}) {
+  function paragraph(
+    runs: readonly TextRun[],
+    size: number,
+    opts: { bold?: boolean; indent?: number; prefix?: string; align?: 'left' | 'center' | 'right'; color?: string } = {},
+  ) {
     const indent = opts.indent ?? 0;
     const tokens = tokenize(opts.prefix ? [{ text: `${opts.prefix} ` }, ...runs] : runs, size, opts.bold);
     const lines = breakLines(tokens, contentW - indent, o.measure, o.lineHeight);
@@ -186,7 +190,11 @@ export function layoutDocument(doc: ExtractedDocument, o: LayoutOptions): LaidOu
           break;
         }
         const prefix = b.list === 'number' ? `${b.listIndex ?? 1}.` : b.list === 'bullet' ? '•' : undefined;
-        paragraph(b.runs, o.baseSize, { indent: b.list ? o.baseSize * 1.5 : 0, ...(prefix ? { prefix } : {}), ...(b.align ? { align: b.align } : {}) });
+        paragraph(b.runs, o.baseSize, {
+          indent: b.list ? o.baseSize * 1.5 : 0,
+          ...(prefix ? { prefix } : {}),
+          ...(b.align ? { align: b.align } : {}),
+        });
         y += o.baseSize * 0.35;
         break;
       }
@@ -222,7 +230,9 @@ export function layoutDocument(doc: ExtractedDocument, o: LayoutOptions): LaidOu
     const colW = weights.map((w) => (w / totalW) * contentW);
     if (Math.min(...colW) < size * 3) size = Math.max(12, size * 0.75);
     rows.forEach((row, ri) => {
-      const cellLines = colW.map((w, c) => breakLines(tokenize([{ text: row[c] ?? '' }], size, ri === 0), Math.max(10, w - 2 * pad), o.measure, 1.25));
+      const cellLines = colW.map((w, c) =>
+        breakLines(tokenize([{ text: row[c] ?? '' }], size, ri === 0), Math.max(10, w - 2 * pad), o.measure, 1.25),
+      );
       const rowH = Math.max(...cellLines.map((ls) => ls.reduce((h, l) => h + l.height, 0))) + 2 * pad;
       if (y + rowH > bottom && y > o.margin) nextPage();
       let x = o.margin;

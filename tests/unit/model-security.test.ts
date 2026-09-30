@@ -3,7 +3,14 @@ import { addPages, duplicatePage, movePage, removePages, replacePage, rotatePage
 import type { Folder, Page } from '../../src/core/docs/model';
 import { folderPath, isDescendantFolder, newId } from '../../src/core/docs/model';
 import { NEUTRAL_ADJUSTMENTS } from '../../src/core/imaging/filters';
-import { classifyImport, exportFileName, ImportError, ooxmlKindFromContentTypes, sanitizeFileName, sniffType } from '../../src/core/security/validate';
+import {
+  classifyImport,
+  exportFileName,
+  ImportError,
+  ooxmlKindFromContentTypes,
+  sanitizeFileName,
+  sniffType,
+} from '../../src/core/security/validate';
 
 function page(id: string): Page {
   return {
@@ -127,11 +134,15 @@ describe('validation des imports', () => {
   test('limites de taille', () => {
     const big = new Uint8Array(2000);
     big.set([0xff, 0xd8, 0xff, 0xe0]);
-    expect(() => classifyImport('big.jpg', big, null, { maxImageBytes: 1000, maxPdfBytes: 1, maxOfficeBytes: 1, maxTextBytes: 1, maxImagePixels: 1 })).toThrow();
+    expect(() =>
+      classifyImport('big.jpg', big, null, { maxImageBytes: 1000, maxPdfBytes: 1, maxOfficeBytes: 1, maxTextBytes: 1, maxImagePixels: 1 }),
+    ).toThrow();
   });
 
   test('conteneurs OOXML', () => {
-    expect(ooxmlKindFromContentTypes('<Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>')).toBe('docx');
+    expect(
+      ooxmlKindFromContentTypes('<Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'),
+    ).toBe('docx');
     expect(ooxmlKindFromContentTypes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml')).toBe('xlsx');
     expect(ooxmlKindFromContentTypes('application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml')).toBe('pptx');
     expect(ooxmlKindFromContentTypes('<Types/>')).toBeNull();

@@ -37,13 +37,17 @@ function describe(status: AutoCaptureStatus, q: FrameQuality | null, multipage: 
     case 'blurry':
       return { text: 'Image floue — stabilisez l’appareil', icon: 'alert', tone: 'warn' };
     case 'hold-still':
-      return progress > 0 ? { text: 'Document détecté — ne bougez plus…', icon: 'check', tone: 'ok' } : { text: 'Document détecté — tenez stable', icon: 'check', tone: 'ok' };
+      return progress > 0
+        ? { text: 'Document détecté — ne bougez plus…', icon: 'check', tone: 'ok' }
+        : { text: 'Document détecté — tenez stable', icon: 'check', tone: 'ok' };
     case 'capturing':
       return { text: 'Capture…', icon: 'check', tone: 'busy' };
     case 'cooldown':
       return { text: multipage ? 'Page capturée — présentez la suivante' : 'Page capturée', icon: 'check', tone: 'ok' };
     default:
-      return q?.hasGlare ? { text: 'Document détecté — attention au reflet', icon: 'alert', tone: 'warn' } : { text: 'Document détecté', icon: 'check', tone: 'ok' };
+      return q?.hasGlare
+        ? { text: 'Document détecté — attention au reflet', icon: 'alert', tone: 'warn' }
+        : { text: 'Document détecté', icon: 'check', tone: 'ok' };
   }
 }
 
@@ -107,7 +111,9 @@ export function ScannerScreen({ query }: { query: URLSearchParams }) {
 
   useEffect(() => {
     const lib = library();
-    void startSession(lib, mode, { ...(docId ? { docId } : {}), ...(replacePageId ? { replacePageId } : {}), folderId: folderId ?? null }).then(setSession);
+    void startSession(lib, mode, { ...(docId ? { docId } : {}), ...(replacePageId ? { replacePageId } : {}), folderId: folderId ?? null }).then(
+      setSession,
+    );
   }, [docId, replacePageId]);
 
   // Camera + detection loop.
@@ -127,7 +133,12 @@ export function ScannerScreen({ query }: { query: URLSearchParams }) {
     const render = () => {
       // Display interpolation at screen refresh rate for a fluid, jitter-free overlay.
       if (target) {
-        shown = shown ? (shown.map((p, i) => ({ x: p.x + ((target as Quad)[i].x - p.x) * 0.45, y: p.y + ((target as Quad)[i].y - p.y) * 0.45 })) as unknown as Quad) : target;
+        shown = shown
+          ? (shown.map((p, i) => ({
+              x: p.x + ((target as Quad)[i].x - p.x) * 0.45,
+              y: p.y + ((target as Quad)[i].y - p.y) * 0.45,
+            })) as unknown as Quad)
+          : target;
       } else shown = null;
       const poly = polyRef.current;
       const hs = handlesRef.current;
@@ -326,7 +337,12 @@ export function ScannerScreen({ query }: { query: URLSearchParams }) {
               }}
             />
           ) : null}
-          <IconButton icon="auto" label={s.autoCapture ? 'Capture automatique activée' : 'Capture automatique désactivée'} active={s.autoCapture} onClick={() => settings.set('autoCapture', !s.autoCapture)} />
+          <IconButton
+            icon="auto"
+            label={s.autoCapture ? 'Capture automatique activée' : 'Capture automatique désactivée'}
+            active={s.autoCapture}
+            onClick={() => settings.set('autoCapture', !s.autoCapture)}
+          />
         </div>
       </header>
 
@@ -339,7 +355,13 @@ export function ScannerScreen({ query }: { query: URLSearchParams }) {
             <label class="btn btn-primary btn-lg">
               <Icon name="image" />
               <span>Choisir des photos</span>
-              <input type="file" accept="image/*" multiple class="visually-hidden" onChange={(e) => void importIntoSession((e.target as HTMLInputElement).files)} />
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                class="visually-hidden"
+                onChange={(e) => void importIntoSession((e.target as HTMLInputElement).files)}
+              />
             </label>
             <Button size="lg" onClick={() => location.reload()}>
               Réessayer
@@ -367,11 +389,24 @@ export function ScannerScreen({ query }: { query: URLSearchParams }) {
           </div>
         ) : null}
         <div class="shutter-row">
-          <button type="button" class="session-thumb" disabled={!count} onClick={() => navigate('/review')} aria-label={count ? `Vérifier les ${count} page(s) capturée(s)` : 'Aucune page capturée'}>
+          <button
+            type="button"
+            class="session-thumb"
+            disabled={!count}
+            onClick={() => navigate('/review')}
+            aria-label={count ? `Vérifier les ${count} page(s) capturée(s)` : 'Aucune page capturée'}
+          >
             {last ? <BlobImage id={last.blobId} alt="" /> : <Icon name="pages" />}
             {count ? <span class="badge">{count}</span> : null}
           </button>
-          <button type="button" class={`shutter ${capturing ? 'is-busy' : ''}`} onClick={() => void capture(false)} disabled={phase !== 'running'} aria-label="Prendre la photo" data-testid="shutter">
+          <button
+            type="button"
+            class={`shutter ${capturing ? 'is-busy' : ''}`}
+            onClick={() => void capture(false)}
+            disabled={phase !== 'running'}
+            aria-label="Prendre la photo"
+            data-testid="shutter"
+          >
             <svg viewBox="0 0 80 80" class="shutter-ring" aria-hidden="true">
               <circle cx="40" cy="40" r="36" class="ring-bg" />
               <circle cx="40" cy="40" r="36" class="ring-fg" style={{ strokeDashoffset: `${226 * (1 - progress)}` }} />
@@ -385,7 +420,13 @@ export function ScannerScreen({ query }: { query: URLSearchParams }) {
           ) : (
             <label class="gallery-btn" aria-label="Importer depuis la galerie" title="Importer depuis la galerie">
               <Icon name="image" />
-              <input type="file" accept="image/*" multiple class="visually-hidden" onChange={(e) => void importIntoSession((e.target as HTMLInputElement).files)} />
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                class="visually-hidden"
+                onChange={(e) => void importIntoSession((e.target as HTMLInputElement).files)}
+              />
             </label>
           )}
         </div>

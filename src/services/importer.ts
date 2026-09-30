@@ -44,14 +44,16 @@ function baseName(name: string): string {
 
 function mimeFor(kind: string, fallback: string): string {
   return (
-    {
-      pdf: 'application/pdf',
-      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      txt: 'text/plain',
-    } as Record<string, string>
-  )[kind] ?? fallback;
+    (
+      {
+        pdf: 'application/pdf',
+        docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        txt: 'text/plain',
+      } as Record<string, string>
+    )[kind] ?? fallback
+  );
 }
 
 /** Imports images, PDF, DOCX, XLSX, PPTX and TXT files after validating their real content. */
@@ -88,10 +90,17 @@ export async function importFiles(lib: Library, files: readonly File[], opts: Im
         });
         const size = { width: bmp.width, height: bmp.height };
         bmp.close();
-        if (size.width * size.height > DEFAULT_IMPORT_LIMITS.maxImagePixels) throw new ImportError('Image trop grande (plus de 60 mégapixels).', 'too-large');
+        if (size.width * size.height > DEFAULT_IMPORT_LIMITS.maxImagePixels)
+          throw new ImportError('Image trop grande (plus de 60 mégapixels).', 'too-large');
         const det = settings.get('importAutoCrop') ? await processing.detect(blob) : { quad: null };
         report(i, file.name, 'Traitement', 0.6);
-        const page = await createPage(lib, { original: blob, width: size.width, height: size.height, quad: det.quad, filter: det.quad ? settings.get('defaultFilter') : 'original' });
+        const page = await createPage(lib, {
+          original: blob,
+          width: size.width,
+          height: size.height,
+          quad: det.quad,
+          filter: det.quad ? settings.get('defaultFilter') : 'original',
+        });
         if (opts.mergeImages) {
           imagePages.push(page);
           imageNames.push(title);
@@ -106,7 +115,10 @@ export async function importFiles(lib: Library, files: readonly File[], opts: Im
         let rendered: Awaited<ReturnType<typeof renderPdf>> | null = null;
         for (let attempt = 0; attempt < 4 && !rendered; attempt++) {
           try {
-            rendered = await renderPdf(bytes, { ...(password ? { password } : {}), onProgress: (d, t) => report(i, file.name, `Page ${d}/${t}`, (d / t) * 0.6) });
+            rendered = await renderPdf(bytes, {
+              ...(password ? { password } : {}),
+              onProgress: (d, t) => report(i, file.name, `Page ${d}/${t}`, (d / t) * 0.6),
+            });
           } catch (e) {
             if (!(e instanceof PdfPasswordError) || !opts.askPassword) throw e;
             const pw = await opts.askPassword(file.name, e.wrong);
@@ -121,11 +133,30 @@ export async function importFiles(lib: Library, files: readonly File[], opts: Im
         const pages: Page[] = [];
         for (const [pi, rp] of rendered.pages.entries()) {
           report(i, file.name, `Enregistrement ${pi + 1}/${rendered.pages.length}`, 0.6 + (0.4 * pi) / rendered.pages.length);
-          pages.push(await createPage(lib, { original: rp.image, width: rp.width, height: rp.height, quad: null, filter: 'original', text: rp.text, textWords: rp.words, snapRatio: false }));
+          pages.push(
+            await createPage(lib, {
+              original: rp.image,
+              width: rp.width,
+              height: rp.height,
+              quad: null,
+              filter: 'original',
+              text: rp.text,
+              textWords: rp.words,
+              snapRatio: false,
+            }),
+          );
         }
         if (!pages.length) throw new ImportError('Ce PDF ne contient aucune page.', 'empty');
         const originalBlobId = await lib.putBlob(new Blob([toArrayBuffer(bytes)], { type: 'application/pdf' }));
-        outcome.created.push(await finalize(lib, { title: rendered.title && rendered.title.length > 2 ? rendered.title : title, pages, source: 'pdf', folderId: opts.folderId ?? null, originalFile: { blobId: originalBlobId, name: sanitizeFileName(file.name), mime: 'application/pdf', size: bytes.length } }));
+        outcome.created.push(
+          await finalize(lib, {
+            title: rendered.title && rendered.title.length > 2 ? rendered.title : title,
+            pages,
+            source: 'pdf',
+            folderId: opts.folderId ?? null,
+            originalFile: { blobId: originalBlobId, name: sanitizeFileName(file.name), mime: 'application/pdf', size: bytes.length },
+          }),
+        );
         continue;
       }
 
@@ -141,7 +172,18 @@ export async function importFiles(lib: Library, files: readonly File[], opts: Im
       const pages: Page[] = [];
       for (const [pi, rp] of rendered.entries()) {
         report(i, file.name, `Enregistrement ${pi + 1}/${rendered.length}`, 0.6 + (0.4 * pi) / rendered.length);
-        pages.push(await createPage(lib, { original: rp.image, width: rp.width, height: rp.height, quad: null, filter: 'original', text: rp.text, textWords: rp.words, snapRatio: false }));
+        pages.push(
+          await createPage(lib, {
+            original: rp.image,
+            width: rp.width,
+            height: rp.height,
+            quad: null,
+            filter: 'original',
+            text: rp.text,
+            textWords: rp.words,
+            snapRatio: false,
+          }),
+        );
       }
       const originalBlobId = await lib.putBlob(new Blob([toArrayBuffer(bytes)], { type: mimeFor(kind, file.type) }));
       outcome.created.push(
