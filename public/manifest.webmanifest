@@ -1,0 +1,24 @@
+{
+  "name": "Feuillet — Scanner de documents",
+  "short_name": "Feuillet",
+  "description": "Scanner de documents local-first : détection automatique des bords, redressement, filtres, PDF recherchables et OCR hors ligne.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./#/",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6f4ef",
+  "theme_color": "#1d5c86",
+  "categories": ["productivity", "business", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Scanner un document", "short_name": "Scanner", "url": "./#/scan", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Rechercher", "short_name": "Rechercher", "url": "./#/search", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

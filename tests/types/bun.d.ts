@@ -51,6 +51,7 @@ declare module 'node:fs' {
   export function statSync(path: string): { size: number; isDirectory(): boolean };
   export function rmSync(path: string, opts?: { recursive?: boolean; force?: boolean }): void;
   export function cpSync(src: string, dst: string, opts?: { recursive?: boolean }): void;
+  export function watch(path: string, opts: { recursive?: boolean }, cb: (event: string, file: string | null) => void): { close(): void };
 }
 
 declare module 'node:path' {

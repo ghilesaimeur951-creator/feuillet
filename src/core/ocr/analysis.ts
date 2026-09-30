@@ -234,6 +234,11 @@ export function findCompany(text: string): string | undefined {
     .split('\n')
     .map((l) => l.trim())
     .filter((l) => l.length >= 2 && l.length <= 60);
+  // "FACTURE EDF", "Invoice ACME Ltd": the issuer often follows the document type in the header.
+  for (const l of lines.slice(0, 6)) {
+    const m = /^(?:facture|invoice|factura|rechnung|fattura|re[cç]u|ticket)\s+(?!n[°o.º]|no\b|num|du\b|de\b|d['’])([A-Z][A-Za-z0-9&.'’ -]{1,30})$/i.exec(l);
+    if (m && /[A-Z]{2,}/.test(m[1] as string)) return (m[1] as string).trim();
+  }
   const legal = lines.find((l) => LEGAL_FORMS.test(l) && /[a-z]/i.test(l));
   if (legal) return legal.replace(/\s{2,}/g, ' ');
   const upper = lines.slice(0, 8).find((l) => /^[A-Z0-9&'’ .-]{2,40}$/.test(l) && /[A-Z]{2,}/.test(l) && !NOISE_LINE.test(l));

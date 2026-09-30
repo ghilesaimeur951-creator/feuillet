@@ -98,7 +98,7 @@ export class SearchIndex {
     const hits: SearchHit[] = [];
     for (const entry of this.docs.values()) {
       const d = entry.doc;
-      if (filters.type && !entry.tokens.type.has(normalize(filters.type))) continue;
+      if (filters.type && !tokenize(filters.type).every((t) => entry.tokens.type.has(t))) continue;
       if (filters.from !== undefined && d.createdAt < filters.from) continue;
       if (filters.to !== undefined && d.createdAt > filters.to) continue;
       let score = 0;

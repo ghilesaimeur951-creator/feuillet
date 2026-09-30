@@ -89,6 +89,11 @@ export class UndoStack<T> {
     return next;
   }
 
+  /** Replaces the present state without recording history (external change, e.g. OCR finished). */
+  sync(value: T): void {
+    this.present = value;
+  }
+
   reset(value: T): void {
     this.past = [];
     this.future = [];

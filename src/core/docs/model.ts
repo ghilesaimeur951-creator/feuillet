@@ -35,6 +35,10 @@ export interface Page {
   blank?: boolean;
 }
 
+/**
+ * Annotation geometry is normalised to the processed page (0..1 on both axes; stroke widths and
+ * text sizes are fractions of the page width), so annotations survive re-rendering at any size.
+ */
 export type Annotation =
   | { id: string; type: 'ink'; color: string; width: number; opacity: number; points: Array<{ x: number; y: number }> }
   | { id: string; type: 'highlight'; color: string; x: number; y: number; w: number; h: number }
