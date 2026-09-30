@@ -246,6 +246,14 @@ Détails et résultats : [docs/TESTING.md](docs/TESTING.md).
 `dist/` est un site **100 % statique** (chemins relatifs : fonctionne à la racine ou dans un
 sous-dossier). Il suffit de le servir en **HTTPS**.
 
+- **Publier le dépôt sur GitHub** : créez un dépôt **vide** nommé `feuillet` (sans README ni
+  licence), puis :
+
+  ```bash
+  git remote add origin https://github.com/<votre-compte>/feuillet.git
+  git push -u origin main
+  ```
+
 - **GitHub Pages** : le workflow `.github/workflows/deploy.yml` construit et publie le site à
   chaque push sur `main` (activez *Settings → Pages → Source : GitHub Actions*).
 - **Netlify / Vercel / Cloudflare Pages** : commande `bun run build`, dossier `dist`.
