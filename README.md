@@ -9,6 +9,9 @@ annotations et signature.
 Tout s’exécute **dans le navigateur, sur l’appareil** : aucun compte, aucun serveur, aucun
 document envoyé. L’application est une **PWA installable** qui fonctionne hors ligne.
 
+**Essayer : https://ghilesaimeur951-creator.github.io/feuillet/** (ouvrez-la sur votre téléphone,
+autorisez la caméra, puis *Partager → Sur l’écran d’accueil* ou *Installer l’application*).
+
 | Scanner (détection temps réel) | Recadrage manuel | Document + OCR + facture | Filtres |
 |---|---|---|---|
 | ![Scanner](docs/screenshots/01-scanner.png) | ![Recadrage](docs/screenshots/02-recadrage.png) | ![Document](docs/screenshots/03-document.png) | ![Filtres](docs/screenshots/04-filtres.png) |
