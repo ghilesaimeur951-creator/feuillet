@@ -84,7 +84,7 @@ fictive posée en perspective sur une table, avec un léger tremblement de la ma
 
 ## Test Android sur émulateur
 
-`android/scripts/smoke.sh` (workflow `android.yml`, émulateur Android 14 x86_64) pilote l’APK de
+`android/scripts/smoke.sh` (workflow `android.yml`, émulateur Android 13 x86_64) pilote l’APK de
 débogage par le protocole DevTools de la WebView (`android/scripts/smoke.mjs`) :
 
 1. démarrage, pont natif présent, aucun service worker ;

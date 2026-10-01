@@ -249,7 +249,7 @@ Détails : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · analyse initiale et p
   dossiers, sauvegarde, écritures concurrentes).
 - **8 scénarios de bout en bout** (Playwright, Chromium mobile, caméra simulée) dont le parcours
   complet de la *Definition of Done*.
-- **Test Android sur émulateur** (GitHub Actions, Android 14) : installation de l’APK, caméra,
+- **Test Android sur émulateur** (GitHub Actions, Android 13) : installation de l’APK, caméra,
   écran scanner, import, OCR, export PDF dans *Téléchargements*, persistance après redémarrage,
   démarrage de l’APK signé.
 
