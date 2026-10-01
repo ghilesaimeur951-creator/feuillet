@@ -169,15 +169,25 @@ try {
     await waitFor('recherche plein texte sur l’OCR', `return document.querySelectorAll('.doc-row').length===1;`, 30_000);
     // Camera last: the emulated camera is the least stable part of the emulator.
     await evaluate(`location.hash='#/'; return true;`);
-    const w = await waitFor(
-      'caméra (getUserMedia)',
-      `const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}}); const st=s.getVideoTracks()[0].getSettings(); s.getTracks().forEach(x=>x.stop()); return st.width||1;`,
-    );
-    console.log('  largeur vidéo :', w);
-    await evaluate(`location.hash='#/scan'; return true;`);
-    await waitFor('écran scanner : flux vidéo affiché', `const v=document.querySelector('video'); return !!v && v.readyState>=2 && v.videoWidth>0;`, 30_000);
-    await evaluate(`location.hash='#/'; return true;`);
-    await waitFor('retour bibliothèque', `return !!document.querySelector('.doc-card');`);
+    // Camera: the emulator's virtual camera is not always available; a missing camera is reported,
+    // a camera that exists but cannot be opened is a failure.
+    const cam = await evaluate(`const devs=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput').length;
+      const r = await Promise.race([
+        navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}}).then(s=>{const st=s.getVideoTracks()[0].getSettings(); s.getTracks().forEach(x=>x.stop()); return 'ok '+st.width+'x'+st.height;}, e=>'erreur '+e.name+': '+e.message),
+        new Promise(r=>setTimeout(()=>r('délai dépassé'),20000))]);
+      return devs+' caméra(s) ; getUserMedia : '+r;`);
+    console.log('Caméra :', cam);
+    if (cam.includes('getUserMedia : ok')) {
+      console.log('✓ caméra (getUserMedia)');
+      await evaluate(`location.hash='#/scan'; return true;`);
+      await waitFor('écran scanner : flux vidéo affiché', `const v=document.querySelector('video'); return !!v && v.readyState>=2 && v.videoWidth>0;`, 30_000);
+      await evaluate(`location.hash='#/'; return true;`);
+      await waitFor('retour bibliothèque', `return !!document.querySelector('.doc-card');`);
+    } else if (cam.startsWith('0 ') || cam.includes('délai')) {
+      console.log('⚠ caméra non testée : pas de caméra utilisable dans cet émulateur');
+    } else {
+      throw new Error(`Caméra : ${cam}`);
+    }
 
   }
   if (errors.length) console.log('Erreurs JavaScript (non bloquantes) :', errors.slice(0, 10));

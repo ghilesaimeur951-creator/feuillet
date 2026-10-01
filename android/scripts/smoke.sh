@@ -65,4 +65,4 @@ sleep 8
 A shell pidof app.feuillet.scanner >/dev/null || { echo "L’APK de publication ne démarre pas"; A logcat -d | grep -iE "AndroidRuntime|FATAL" | tail -40; exit 1; }
 if A logcat -d | grep -q "FATAL EXCEPTION"; then A logcat -d | grep -A20 "FATAL EXCEPTION"; exit 1; fi
 echo "Tests Android réussis."
-printf '::notice title=Test émulateur Android::%s\n' "$(grep -E '^(✓|==|  largeur|Connecté)' "$LOG" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+printf '::notice title=Test émulateur Android::%s\n' "$(grep -E '^(✓|⚠|==|WebView|Caméra|Connecté)' "$LOG" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
