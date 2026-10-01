@@ -26,55 +26,93 @@ async function target() {
   throw new Error('WebView introuvable via DevTools');
 }
 
-const t = await target();
-console.log('Page :', t.url);
-const wsUrl = (t.webSocketDebuggerUrl ?? `ws://127.0.0.1:9222/devtools/page/${t.id}`).replace('localhost', '127.0.0.1');
-console.log('WebSocket :', wsUrl);
-const ws = new WebSocket(wsUrl);
-await new Promise((res, rej) => {
-  const timer = setTimeout(() => rej(new Error('WebSocket DevTools : pas de connexion en 20 s')), 20_000);
-  ws.onopen = () => {
-    clearTimeout(timer);
-    res();
-  };
-  ws.onerror = (e) => {
-    clearTimeout(timer);
-    rej(new Error(`WebSocket DevTools : erreur ${e?.message ?? ''}`));
-  };
-  ws.onclose = (e) => {
-    clearTimeout(timer);
-    rej(new Error(`WebSocket DevTools fermé (${e.code} ${e.reason})`));
-  };
-});
-ws.onclose = (e) => console.error(`WebSocket fermé (${e.code})`);
+let ws = null;
 let seq = 0;
 const pending = new Map();
 const errors = [];
-ws.onmessage = (e) => {
-  const m = JSON.parse(e.data);
-  if (m.id && pending.has(m.id)) {
-    pending.get(m.id)(m);
-    pending.delete(m.id);
-  } else if (m.method === 'Runtime.exceptionThrown') {
-    errors.push(m.params.exceptionDetails?.exception?.description ?? m.params.exceptionDetails?.text);
-  } else if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') {
-    errors.push(m.params.args.map((a) => a.value ?? a.description).join(' '));
+
+/** (Re)connects to the page; the DevTools socket can drop (1006) while the WebView starts. */
+async function connect() {
+  for (let attempt = 1; attempt <= 15; attempt++) {
+    const t = await target();
+    const wsUrl = (t.webSocketDebuggerUrl ?? `ws://127.0.0.1:9222/devtools/page/${t.id}`).replace('localhost', '127.0.0.1');
+    try {
+      const sock = new WebSocket(wsUrl);
+      await new Promise((res, rej) => {
+        const timer = setTimeout(() => rej(new Error('pas de connexion en 15 s')), 15_000);
+        sock.onopen = () => {
+          clearTimeout(timer);
+          res();
+        };
+        sock.onerror = () => {
+          clearTimeout(timer);
+          rej(new Error('erreur'));
+        };
+        sock.onclose = (e) => {
+          clearTimeout(timer);
+          rej(new Error(`fermé (${e.code})`));
+        };
+      });
+      sock.onmessage = (e) => {
+        const m = JSON.parse(e.data);
+        if (m.id && pending.has(m.id)) {
+          pending.get(m.id)(m);
+          pending.delete(m.id);
+        } else if (m.method === 'Runtime.exceptionThrown') {
+          errors.push(m.params.exceptionDetails?.exception?.description ?? m.params.exceptionDetails?.text);
+        } else if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') {
+          errors.push(m.params.args.map((a) => a.value ?? a.description).join(' '));
+        }
+      };
+      sock.onclose = (e) => {
+        console.log(`WebSocket fermé (${e.code}), reconnexion au prochain appel`);
+        if (ws === sock) ws = null;
+      };
+      ws = sock;
+      const r = await rawSend('Runtime.enable', {}, 10_000);
+      if (r) {
+        console.log(`Connecté à ${t.url} (tentative ${attempt})`);
+        return;
+      }
+    } catch (e) {
+      console.log(`Connexion DevTools, tentative ${attempt} : ${e.message}`);
+    }
+    ws = null;
+    await sleep(2000);
   }
-};
-const send = (method, params = {}) =>
-  new Promise((r, rej) => {
+  throw new Error('Connexion DevTools impossible');
+}
+
+function rawSend(method, params, timeout) {
+  return new Promise((r) => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return r(null);
     const id = ++seq;
     const timer = setTimeout(() => {
       pending.delete(id);
-      rej(new Error(`CDP ${method} : pas de réponse`));
-    }, 30_000);
+      r(null);
+    }, timeout);
     pending.set(id, (m) => {
       clearTimeout(timer);
       r(m);
     });
     ws.send(JSON.stringify({ id, method, params }));
   });
-await send('Runtime.enable');
+}
+
+async function send(method, params = {}) {
+  for (let i = 0; i < 3; i++) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) await connect();
+    const r = await rawSend(method, params, 30_000);
+    if (r) return r;
+    console.log(`CDP ${method} : pas de réponse, reconnexion`);
+    try {
+      ws?.close();
+    } catch {}
+    ws = null;
+  }
+  throw new Error(`CDP ${method} : pas de réponse`);
+}
+await connect();
 
 async function evaluate(body) {
   const r = await send('Runtime.evaluate', { expression: `(async () => { ${body} })()`, awaitPromise: true, returnByValue: true });
@@ -141,7 +179,7 @@ try {
   if (errors.length) console.log('Erreurs JavaScript (non bloquantes) :', errors.slice(0, 10));
   console.log(`Phase « ${phase} » réussie.`);
   clearTimeout(watchdog);
-  ws.close();
+  ws?.close();
   process.exit(0);
 } catch (e) {
   console.error(e.message);
