@@ -3,7 +3,8 @@ import { importFiles } from '../services/importer';
 import { runOcr } from '../services/ocr-runner';
 import { settings } from '../services/settings';
 import { navigate } from './router';
-import { chooseDialog, confirmDialog, errorMessage, library, promptDialog, setBusy, toast, withBusy } from './state';
+import { checkVaultPassword } from '../core/security/vault';
+import { chooseDialog, confirmDialog, errorMessage, library, promptDialog, setBusy, toast, vault, withBusy } from './state';
 
 /** High-level user actions shared by several screens. */
 
@@ -162,4 +163,47 @@ export function defaultExportOptions() {
     searchable: settings.get('searchablePdf'),
     pageNumbers: settings.get('pageNumbers'),
   };
+}
+
+/** Locks a document with a new password (asked twice). */
+export async function lockFlow(doc: DocumentRecord): Promise<boolean> {
+  const pw = await promptDialog('Verrouiller le document', {
+    message:
+      'Pages, texte reconnu, notes et étiquettes seront chiffrés sur cet appareil (AES-256). Le titre reste visible. Sans ce mot de passe, le document est irrécupérable : aucune réinitialisation n’est possible.',
+    inputType: 'password',
+    placeholder: 'Au moins 6 caractères',
+    confirmLabel: 'Continuer',
+  });
+  if (pw === null) return false;
+  const invalid = checkVaultPassword(pw);
+  if (invalid) {
+    toast(invalid, 'error');
+    return false;
+  }
+  const again = await promptDialog('Confirmer le mot de passe', { inputType: 'password', confirmLabel: 'Verrouiller' });
+  if (again === null) return false;
+  if (again !== pw) {
+    toast('Les deux mots de passe ne correspondent pas', 'error');
+    return false;
+  }
+  const done = await withBusy('Chiffrement du document…', () => library().lockDocument(doc.id, pw));
+  if (done) toast('Document verrouillé', 'success');
+  return !!done;
+}
+
+/** Locks again a document opened temporarily (same password), or asks for a new one after a restart. */
+export async function relockFlow(doc: DocumentRecord): Promise<void> {
+  if (vault().isOpenInSession(doc.id)) {
+    const ok = await withBusy('Chiffrement du document…', () => vault().relock(doc.id));
+    if (ok) toast('Document verrouillé', 'success');
+  } else await lockFlow(doc);
+}
+
+export async function removeLockFlow(doc: DocumentRecord): Promise<void> {
+  const ok = await confirmDialog('Retirer le verrou ?', 'Le document restera déchiffré sur cet appareil et réapparaîtra dans la recherche.', {
+    confirmLabel: 'Retirer le verrou',
+  });
+  if (!ok) return;
+  await vault().removeLock(doc.id);
+  toast('Verrou retiré', 'success');
 }

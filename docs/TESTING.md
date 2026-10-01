@@ -12,7 +12,7 @@ correspondante est ignorée, jamais simulée) : `qpdf`, `pdfinfo`, `pdftotext` (
 `unzip`, `python3` + OpenCV (comparaison de précision). Les tests de bout en bout nécessitent
 `ffmpeg` (conversion du flux caméra simulé en Y4M) et Chromium (`npx playwright install chromium`).
 
-## Tests unitaires (119)
+## Tests unitaires (127)
 
 | Fichier | Couverture |
 |---|---|
@@ -28,6 +28,7 @@ correspondante est ignorée, jamais simulée) : `qpdf`, `pdfinfo`, `pdftotext` (
 | `ocr-analysis.test.ts` | TSV Tesseract, montants FR/EN, dates (4 formats), classification (dont faux positif évité), extraction facture et reçu, titre et étiquettes suggérés |
 | `ocr-engine.test.ts` | **OCR réel** avec le WASM et les modèles embarqués : facture française (texte, positions, confiance, classification, montant TTC), allemand/italien/espagnol, erreurs |
 | `model-security.test.ts` | opérations de pages (ajout, suppression, déplacement, duplication, remplacement, rotation, filtres), fusion avec OCR concurrent, annuler/rétablir, dossiers ; validation des imports (octets magiques, extension mensongère, formats refusés, limites, OOXML), noms de fichiers dangereux |
+| `vault.test.ts` | AES-GCM (aller-retour, mauvais mot de passe, mauvais document, altération, IV aléatoire), verrouillage : **plus aucun octet du secret dans le stockage**, recherche masquée, mauvais mot de passe sans effet, déverrouillage complet (images, signature, fichier original, types MIME), persistance, écritures concurrentes neutralisées, ouverture temporaire, sauvegarde chiffrée |
 | `library.test.ts` | persistance (fermer/rouvrir), recherche OCR, renommage/étiquettes/notes/favoris/historique, corbeille et purge des blobs, purge à 30 jours, duplication, dossiers (cycle, suppression récursive, restauration), ramasse-miettes, **sauvegarde/restauration ZIP**, **écritures concurrentes sans perte**, paramètres |
 
 ## Cas de test de vision (section 31)
@@ -54,7 +55,7 @@ Erreur = distance maximale d’un coin à la vérité terrain.
 Quand l’automatisme échoue (reflet massif, bords invisibles), l’écran de recadrage permet de
 placer les quatre coins manuellement (souris, doigt avec loupe, ou clavier).
 
-## Tests de bout en bout (7 scénarios)
+## Tests de bout en bout (8 scénarios)
 
 `tests/e2e/app.spec.ts`, Chromium en émulation Pixel 7, **caméra simulée** : un flux vidéo
 (`tests/fixtures/e2e/document.mjpeg`, généré par `scripts/gen_e2e_video.py`) montre une facture
@@ -77,10 +78,13 @@ fictive posée en perspective sur une table, avec un léger tremblement de la ma
    **PDF chiffré AES-256**.
 7. **Page importée à l’envers** : orientation corrigée automatiquement par l’OCR, contenu
    recherchable.
+8. **Document verrouillé** : verrouillage par mot de passe (saisi deux fois), contenu absent de la
+   recherche, persistance après rechargement, mauvais mot de passe refusé, ouverture temporaire,
+   **reverrouillage automatique** en quittant, retrait définitif du verrou.
 
 ## Résultats (dernière exécution)
 
 - Type-check : OK (0 erreur).
-- Lint : OK (112 fichiers).
-- Tests unitaires : **119 / 119**.
-- Tests de bout en bout : **7 / 7**.
+- Lint : OK (116 fichiers).
+- Tests unitaires : **127 / 127**.
+- Tests de bout en bout : **8 / 8**.

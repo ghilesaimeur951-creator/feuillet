@@ -27,7 +27,10 @@ function Tool({ icon, title, text, onClick }: { icon: IconName; title: string; t
 
 async function pickDocuments(title: string, min = 1): Promise<string[] | null> {
   const lib = library();
-  const docs = lib.documents().sort((a, b) => b.updatedAt - a.updatedAt);
+  const docs = lib
+    .documents()
+    .filter((d) => !d.locked)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
   if (docs.length < min) {
     toast(min > 1 ? `Il faut au moins ${min} documents` : 'Aucun document', 'info');
     return null;

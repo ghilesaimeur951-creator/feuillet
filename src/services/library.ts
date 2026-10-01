@@ -1,5 +1,17 @@
-import type { DocumentRecord, Folder, HistoryAction, HistoryEntry, Page } from '../core/docs/model';
-import { documentFormatLabel, documentText, folderPath, isDescendantFolder, newId } from '../core/docs/model';
+import type { DocumentRecord, Folder, HistoryAction, HistoryEntry, LockedContent, Page } from '../core/docs/model';
+import { contentBlobIds, documentFormatLabel, documentText, folderPath, isDescendantFolder, newId, remapBlobIds } from '../core/docs/model';
+import {
+  checkVaultPassword,
+  deriveVaultKey,
+  fromBase64,
+  seal,
+  sealJson,
+  toBase64,
+  unseal,
+  unsealJson,
+  VAULT_ITERATIONS,
+} from '../core/security/vault';
+import { toArrayBuffer } from '../core/util/bytes';
 import { KIND_LABELS } from '../core/ocr/analysis';
 import { SearchIndex } from '../core/search/index';
 import type { SearchFilters, SearchHit } from '../core/search/index';
@@ -38,6 +50,8 @@ export class Library {
   private listeners = new Set<Listener>();
   private blobSizes = new Map<string, number>();
   ready = false;
+  /** PBKDF2 iterations for new locks (lowered only by tests). */
+  vaultIterations = VAULT_ITERATIONS;
 
   constructor(readonly adapter: LibraryAdapter) {}
 
@@ -149,13 +163,7 @@ export class Library {
 
   /** Blob ids referenced by a document (pages, thumbnails, annotations, original file). */
   static blobIds(d: DocumentRecord): string[] {
-    const ids: string[] = [];
-    for (const p of d.pages) {
-      ids.push(p.originalBlobId, p.processedBlobId, p.thumbBlobId);
-      for (const a of p.annotations) if (a.type === 'image') ids.push(a.blobId);
-    }
-    if (d.originalFile) ids.push(d.originalFile.blobId);
-    return [...new Set(ids.filter(Boolean))];
+    return [...new Set([...contentBlobIds(d), ...(d.locked?.blobIds ?? [])])];
   }
 
   private async computeSize(d: DocumentRecord): Promise<number> {
@@ -215,14 +223,14 @@ export class Library {
     return doc;
   }
 
-  /** Persists a modified document (new revision). */
   /** Per-document write queue: updates are applied one after the other on the latest version. */
   private writes = new Map<string, Promise<unknown>>();
 
   /**
    * Applies `fn` to the latest version of a document and persists the result. Writes to the same
    * document are serialised, so concurrent edits (e.g. background OCR while the user changes a
-   * filter) never overwrite each other.
+   * filter) never overwrite each other. On a locked document, only the public fields (title,
+   * folder, favourite, dates, trash state) can change: the encrypted content is preserved as is.
    */
   updateDocument(
     id: string,
@@ -231,12 +239,30 @@ export class Library {
     detail?: string,
     touch = true,
   ): Promise<DocumentRecord> {
+    return this.enqueue(id, fn, action, detail, touch, false);
+  }
+
+  private enqueue(
+    id: string,
+    fn: (latest: DocumentRecord) => DocumentRecord | Promise<DocumentRecord>,
+    action: HistoryAction | null,
+    detail: string | undefined,
+    touch: boolean,
+    vault: boolean,
+  ): Promise<DocumentRecord> {
     const prev = this.writes.get(id) ?? Promise.resolve();
     const run = async (): Promise<DocumentRecord> => {
       const latest = this.docs.get(id);
       if (!latest) throw new Error('Document introuvable');
-      const changed = await fn(latest);
-      const next: DocumentRecord = touch ? { ...changed, id, updatedAt: Date.now(), revision: latest.revision + 1 } : { ...changed, id };
+      let changed = await fn(latest);
+      if (!vault && latest.locked) {
+        const { kind: _k, invoice: _i, originalFile: _o, relockPending: _r, ...pub } = changed;
+        void [_k, _i, _o, _r];
+        changed = { ...pub, pages: [], notes: '', tags: [], locked: latest.locked };
+      }
+      const next: DocumentRecord = touch
+        ? { ...changed, id, updatedAt: Date.now(), revision: latest.revision + 1 }
+        : { ...changed, id, revision: latest.revision + (vault ? 1 : 0) };
       next.sizeBytes = await this.computeSize(next);
       await this.adapter.documents.put(next);
       this.docs.set(id, next);
@@ -251,6 +277,141 @@ export class Library {
       p.catch(() => undefined),
     );
     return p;
+  }
+
+  // ---------- Locked documents ----------
+
+  /**
+   * Encrypts a document with a password: pages, OCR text, notes, tags, analysis and every blob.
+   * Sealed blobs are written first and the plaintext ones deleted only once the locked record is
+   * saved, so an interruption never loses data (orphans are removed by `collectGarbage`).
+   * `quiet` = re-lock after a temporary opening (no new revision date, no history entry).
+   */
+  async lockDocument(id: string, password: string, quiet = false): Promise<DocumentRecord> {
+    const invalid = checkVaultPassword(password);
+    if (invalid) throw new Error(invalid);
+    const vk = await deriveVaultKey(password, undefined, this.vaultIterations);
+    let plaintext: string[] = [];
+    const saved = await this.enqueue(
+      id,
+      async (latest) => {
+        if (latest.locked) throw new Error('Ce document est déjà verrouillé');
+        const blobs: LockedContent['blobs'] = {};
+        const sealedIds: string[] = [];
+        try {
+          for (const bid of contentBlobIds(latest)) {
+            const b = await this.getBlob(bid);
+            if (!b) continue;
+            const sealed = await seal(vk.key, new Uint8Array(await b.arrayBuffer()), latest.id);
+            const sid = await this.putBlob(new Blob([toArrayBuffer(sealed)], { type: 'application/octet-stream' }));
+            sealedIds.push(sid);
+            blobs[bid] = { sealed: sid, type: b.type };
+          }
+        } catch (e) {
+          for (const sid of sealedIds) await this.deleteBlob(sid);
+          throw e;
+        }
+        const { kind, invoice, originalFile, relockPending: _r, ...pub } = latest;
+        void _r;
+        const content: LockedContent = {
+          pages: latest.pages,
+          notes: latest.notes,
+          tags: latest.tags,
+          blobs,
+          ...(kind ? { kind } : {}),
+          ...(invoice ? { invoice } : {}),
+          ...(originalFile ? { originalFile } : {}),
+        };
+        plaintext = contentBlobIds(latest);
+        return {
+          ...pub,
+          pages: [],
+          notes: '',
+          tags: [],
+          locked: {
+            v: 1,
+            kdf: 'PBKDF2-SHA256',
+            iterations: vk.iterations,
+            salt: toBase64(vk.salt),
+            payload: await sealJson(vk.key, content, latest.id),
+            blobIds: sealedIds,
+            pageCount: latest.pages.length,
+            lockedAt: Date.now(),
+          },
+        };
+      },
+      quiet ? null : 'modified',
+      'Document verrouillé',
+      !quiet,
+      true,
+    );
+    for (const b of plaintext) await this.deleteBlob(b);
+    return saved;
+  }
+
+  /**
+   * Decrypts a locked document. Throws `WrongPasswordError` for a wrong password (nothing is
+   * changed). `temporary` marks it to be locked again when the user leaves it.
+   */
+  async unlockDocument(id: string, password: string, temporary = false): Promise<DocumentRecord> {
+    let sealedIds: string[] = [];
+    const saved = await this.enqueue(
+      id,
+      async (latest) => {
+        const lock = latest.locked;
+        if (!lock) return latest;
+        const vk = await deriveVaultKey(password, fromBase64(lock.salt), lock.iterations);
+        const content = await unsealJson<LockedContent>(vk.key, lock.payload, latest.id);
+        const map = new Map<string, string>();
+        try {
+          for (const [plainId, { sealed, type }] of Object.entries(content.blobs)) {
+            const b = await this.getBlob(sealed);
+            if (!b) continue;
+            const data = await unseal(vk.key, new Uint8Array(await b.arrayBuffer()), latest.id);
+            map.set(plainId, await this.putBlob(new Blob([toArrayBuffer(data)], { type })));
+          }
+        } catch (e) {
+          for (const nid of map.values()) await this.deleteBlob(nid);
+          throw e;
+        }
+        sealedIds = lock.blobIds;
+        const restored = remapBlobIds({ pages: content.pages, originalFile: content.originalFile }, map);
+        const { locked: _l, ...pub } = latest;
+        void _l;
+        return {
+          ...pub,
+          pages: restored.pages,
+          notes: content.notes,
+          tags: content.tags,
+          ...(content.kind ? { kind: content.kind } : {}),
+          ...(content.invoice ? { invoice: content.invoice } : {}),
+          ...(restored.originalFile ? { originalFile: restored.originalFile } : {}),
+          ...(temporary ? { relockPending: true } : {}),
+        };
+      },
+      temporary ? 'opened' : 'modified',
+      temporary ? 'Déverrouillé temporairement' : 'Verrou retiré',
+      !temporary,
+      true,
+    );
+    for (const s of sealedIds) await this.deleteBlob(s);
+    return saved;
+  }
+
+  /** Forgets that a temporarily opened document must be locked again (the user removed the lock). */
+  async keepUnlocked(id: string): Promise<DocumentRecord> {
+    return this.enqueue(
+      id,
+      (latest) => {
+        const { relockPending: _r, ...rest } = latest;
+        void _r;
+        return rest;
+      },
+      'modified',
+      'Verrou retiré',
+      true,
+      true,
+    );
   }
 
   /** Replaces a document by the given version (prefer `updateDocument` for partial changes). */
@@ -295,6 +456,7 @@ export class Library {
   async duplicate(id: string): Promise<DocumentRecord> {
     const d = this.docs.get(id);
     if (!d) throw new Error('Document introuvable');
+    if (d.locked) throw new Error('Déverrouillez le document avant de le dupliquer');
     const map = new Map<string, string>();
     const copyBlob = async (bid: string) => {
       if (!bid) return bid;

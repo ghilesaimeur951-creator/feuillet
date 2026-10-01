@@ -36,9 +36,16 @@ supprime tout.
 
 ## Limites
 
-- Les documents ne sont **pas chiffrés au repos** dans IndexedDB : la protection repose sur la
-  sécurité du système et du navigateur (session, chiffrement du disque, verrouillage de
-  l’appareil). Un coffre chiffré par mot de passe dans l’application est une amélioration future.
+- Seuls les documents **verrouillés** sont chiffrés au repos ; les autres reposent sur la sécurité du
+  système et du navigateur (session, chiffrement du disque, verrouillage de l’appareil).
+- Document verrouillé (`src/core/security/vault.ts`) : PBKDF2-HMAC-SHA-256 (sel aléatoire de
+  16 octets, 600 000 itérations) → AES-256-GCM, IV aléatoire de 96 bits par élément, identifiant du
+  document en données authentifiées. Chiffrés : pages, OCR, notes, étiquettes, analyse, fichier
+  original et toutes les images. En clair : titre, dossier, dates, favori, nombre de pages. Le mot
+  de passe n’est jamais stocké ; pendant une ouverture temporaire il reste en mémoire jusqu’au
+  reverrouillage. Les blobs chiffrés sont écrits avant la suppression des blobs en clair (aucune
+  perte en cas d’interruption) ; l’effacement physique des anciens octets par le navigateur
+  n’est pas garanti.
 - L’en-tête `Permissions-Policy` et les en-têtes HTTP de sécurité dépendent de l’hébergeur (voir
   [DEPLOYMENT.md](DEPLOYMENT.md)) ; la CSP est déjà imposée par la balise `<meta>`.
 

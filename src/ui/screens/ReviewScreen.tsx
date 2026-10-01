@@ -53,7 +53,9 @@ async function finalizeSession(session: ScanSession, progress: (v: number, label
   if (!pages.length) throw new Error('Aucune page à enregistrer');
   let doc: DocumentRecord;
   const target = session.target;
-  const existing = target.docId ? lib.get(target.docId) : undefined;
+  // A document locked meanwhile cannot receive pages: the scan becomes a new document.
+  const found = target.docId ? lib.get(target.docId) : undefined;
+  const existing = found && !found.locked ? found : undefined;
   if (existing && target.replacePageId) {
     const replacement = pages[0] as Page;
     doc = await lib.updateDocument(

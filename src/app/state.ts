@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { DocumentRecord, Folder, HistoryEntry } from '../core/docs/model';
 import { Library } from '../services/library';
+import { VaultSession } from '../services/vault-session';
 import { createMemoryAdapter } from '../services/storage/adapter';
 import { createIndexedDbAdapter } from '../services/storage/indexeddb';
 import { settings } from '../services/settings';
@@ -33,6 +34,14 @@ export function initLibrary(): Promise<Library> {
 export function library(): Library {
   if (!libraryInstance) throw new Error('Bibliothèque non initialisée');
   return libraryInstance;
+}
+
+let vaultInstance: VaultSession | null = null;
+
+/** Temporary openings of locked documents (passwords in memory only). */
+export function vault(): VaultSession {
+  if (!vaultInstance) vaultInstance = new VaultSession(library());
+  return vaultInstance;
 }
 
 /** Re-renders the component whenever the library changes; returns the library. */

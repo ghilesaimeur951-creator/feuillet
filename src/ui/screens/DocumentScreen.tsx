@@ -4,15 +4,18 @@ import { KIND_LABELS } from '../../core/ocr/analysis';
 import { mergeConcurrentPage, movePage, removePages, rotatePage, setFilter, UndoStack } from '../../core/docs/pages';
 import { FILTERS } from '../../core/imaging/filters';
 import type { FilterId } from '../../core/imaging/filters';
-import { moveFlow, ocrFlow, renameFlow, scanTo, trashWithUndo } from '../../app/actions';
+import { lockFlow, moveFlow, ocrFlow, relockFlow, removeLockFlow, renameFlow, scanTo, trashWithUndo } from '../../app/actions';
 import { goBack, navigate } from '../../app/router';
-import { chooseDialog, confirmDialog, errorMessage, library, promptDialog, toast, useLibrary, withBusy } from '../../app/state';
+import { chooseDialog, confirmDialog, errorMessage, library, promptDialog, toast, useLibrary, vault, withBusy } from '../../app/state';
+
+const vaultOpen = (id: string) => vault().isOpenInSession(id);
 import { blankPageIds, extractPages, mergeDocuments, parsePageRanges, splitDocument } from '../../services/doc-tools';
 import { copyPage, createPage, rerenderPage } from '../../services/pages';
 import { processing } from '../../services/processing/client';
 import { settings } from '../../services/settings';
 import { DocDetailsSheet, InvoiceCard } from '../components/DocDetailsSheet';
 import { ExportSheet } from '../components/ExportSheet';
+import { LockedDocument } from '../components/LockedDocument';
 import { Icon } from '../components/Icon';
 import { PageGrid } from '../components/PageGrid';
 import { ActionList, Button, EmptyState, formatBytes, formatDate, IconButton, Sheet } from '../components/ui';
@@ -32,11 +35,11 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
   const [, bump] = useState(0);
 
   useEffect(() => {
-    if (doc) {
+    if (doc && !doc.locked) {
       void lib.markOpened(doc.id);
       undo.current = new UndoStack<Page[]>(doc.pages);
     }
-  }, [id]);
+  }, [id, !!doc?.locked]);
 
   // Keyboard: Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y, Delete for the selection.
   useEffect(() => {
@@ -81,6 +84,8 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
       </div>
     );
   }
+
+  if (doc.locked) return <LockedDocument doc={doc} />;
 
   /** Applies a page-list change: saves the document and records it for undo. */
   const commit = async (pages: Page[], detail?: string, record = true): Promise<DocumentRecord | undefined> => {
@@ -294,7 +299,7 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
       icon: 'merge',
       label: 'Fusionner avec un autre document…',
       onSelect: async () => {
-        const others = lib.documents().filter((d) => d.id !== doc.id);
+        const others = lib.documents().filter((d) => d.id !== doc.id && !d.locked);
         if (!others.length) return toast('Aucun autre document à fusionner', 'info');
         const pick = await chooseDialog(
           'Ajouter à la fin les pages de…',
@@ -370,6 +375,9 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
           await deletePages(ids);
       },
     },
+    doc.relockPending
+      ? { icon: 'lock', label: 'Retirer le verrou', hint: 'Garder le document déchiffré', onSelect: () => void removeLockFlow(doc) }
+      : { icon: 'lock', label: 'Verrouiller par mot de passe', hint: 'Chiffrement local AES-256', onSelect: () => void lockFlow(doc) },
     {
       icon: 'trash',
       label: 'Mettre à la corbeille',
@@ -423,6 +431,20 @@ export function DocumentScreen({ id, preset, openMenu }: { id: string; preset?: 
           </span>
         ))}
       </div>
+
+      {doc.relockPending ? (
+        <div class="banner banner-info lock-banner" role="status" data-testid="relock-banner">
+          <Icon name="lock" size={18} />
+          <span style={{ flex: 1 }}>
+            {vaultOpen(doc.id)
+              ? 'Ouvert temporairement : il sera verrouillé à nouveau quand vous le quitterez.'
+              : 'Ce document ouvert temporairement n’a pas été verrouillé à nouveau (application fermée entre-temps).'}
+          </span>
+          <Button size="sm" icon="lock" onClick={() => void relockFlow(doc)}>
+            Verrouiller
+          </Button>
+        </div>
+      ) : null}
 
       {invoice ? <InvoiceCard invoice={invoice} /> : null}
 

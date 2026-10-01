@@ -1,5 +1,5 @@
 import type { DocumentRecord } from '../../core/docs/model';
-import { documentFormatLabel } from '../../core/docs/model';
+import { documentFormatLabel, pageCount } from '../../core/docs/model';
 import { KIND_LABELS } from '../../core/ocr/analysis';
 import { Icon } from './Icon';
 import { BlobImage, formatBytes, formatDate } from './ui';
@@ -40,8 +40,16 @@ export function DocCard({ doc, mode, selected, selecting, onOpen, onToggle, onLo
     else onOpen(doc);
   };
   const first = doc.pages[0];
-  const meta = `${formatDate(doc.updatedAt)} · ${doc.pages.length} p.${mode === 'list' ? ` · ${formatBytes(doc.sizeBytes)}` : ''}`;
-  const label = `${doc.title}, ${doc.pages.length} page${doc.pages.length > 1 ? 's' : ''}, modifié ${formatDate(doc.updatedAt)}${doc.favorite ? ', favori' : ''}${selected ? ', sélectionné' : ''}`;
+  const n = pageCount(doc);
+  const meta = `${formatDate(doc.updatedAt)} · ${n} p.${mode === 'list' ? ` · ${formatBytes(doc.sizeBytes)}` : ''}`;
+  const label = `${doc.title}, ${doc.locked ? 'verrouillé, ' : ''}${n} page${n > 1 ? 's' : ''}, modifié ${formatDate(doc.updatedAt)}${doc.favorite ? ', favori' : ''}${selected ? ', sélectionné' : ''}`;
+  const thumb = doc.locked ? (
+    <span class="doc-locked" title="Document verrouillé">
+      <Icon name="lock" size={mode === 'list' ? 22 : 34} />
+    </span>
+  ) : (
+    <BlobImage id={first?.thumbBlobId} alt="" />
+  );
   const common = {
     onPointerDown: start,
     onPointerUp: cancel,
@@ -60,6 +68,7 @@ export function DocCard({ doc, mode, selected, selecting, onOpen, onToggle, onLo
   const badges = (
     <div class="doc-badges">
       <span class="pill">{documentFormatLabel(doc)}</span>
+      {doc.locked ? <span class="pill pill-accent">Verrouillé</span> : null}
       {doc.kind ? <span class="pill pill-accent">{KIND_LABELS[doc.kind]}</span> : null}
       {doc.pages.some((p) => p.ocr) ? (
         <span class="pill pill-primary" title="Texte reconnu (OCR)">
@@ -71,12 +80,11 @@ export function DocCard({ doc, mode, selected, selecting, onOpen, onToggle, onLo
   if (mode === 'list') {
     return (
       <button type="button" class={`doc-row ${selected ? 'is-selected' : ''}`} {...common}>
-        <div class="doc-thumb">
-          <BlobImage id={first?.thumbBlobId} alt="" />
-        </div>
+        <div class="doc-thumb">{thumb}</div>
         <div class="doc-meta">
           <span class="doc-title">{doc.title}</span>
           <span class="doc-sub">
+            {doc.locked ? 'Verrouillé · ' : ''}
             {documentFormatLabel(doc)}
             {doc.kind ? ` · ${KIND_LABELS[doc.kind]}` : ''} · {meta}
           </span>
@@ -90,7 +98,7 @@ export function DocCard({ doc, mode, selected, selecting, onOpen, onToggle, onLo
   return (
     <button type="button" class={`doc-card ${selected ? 'is-selected' : ''}`} {...common}>
       <div class="doc-thumb">
-        <BlobImage id={first?.thumbBlobId} alt="" />
+        {thumb}
         {mode === 'grid' ? badges : null}
         {doc.favorite ? (
           <span class="doc-fav">

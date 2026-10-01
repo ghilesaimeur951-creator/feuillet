@@ -840,6 +840,54 @@ input[type='range'] {
   display: block;
 }
 
+.doc-locked {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--text-2);
+  background: repeating-linear-gradient(135deg, var(--surface-2) 0 10px, var(--surface) 10px 20px);
+}
+
+.locked-panel {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 40px 20px;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.locked-panel h2 {
+  font-size: 20px;
+}
+
+.locked-panel p {
+  margin: 0;
+}
+
+.locked-field {
+  width: 100%;
+  text-align: left;
+}
+
+.form-error {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  text-align: left;
+  margin: 0;
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.lock-banner {
+  margin: 8px 16px;
+  flex-wrap: wrap;
+}
+
 .img-placeholder {
   background: linear-gradient(110deg, var(--surface-2) 30%, var(--surface-3) 50%, var(--surface-2) 70%);
   background-size: 250% 100%;

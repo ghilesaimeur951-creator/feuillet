@@ -2,7 +2,7 @@ import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { importFlow, openImportPicker, scanTo } from './actions';
 import { navigate, useRoute } from './router';
-import { storageWarning, useSettings } from './state';
+import { storageWarning, useSettings, vault } from './state';
 import { Icon } from '../ui/components/Icon';
 import type { IconName } from '../ui/components/Icon';
 import { Overlays } from '../ui/components/Overlays';
@@ -103,6 +103,22 @@ export function App() {
 
   const p = route.path;
   const seg = route.segments;
+
+  // Temporarily opened locked documents are locked again when the user leaves them (scan and
+  // review flows keep them open: they add pages to the document) or after a minute in background.
+  const keepOpen = seg[0] === 'doc' ? (seg[1] ?? null) : seg[0] === 'scan' || seg[0] === 'review' ? '*' : null;
+  useEffect(() => {
+    if (keepOpen !== '*') void vault().relockAll(keepOpen);
+  }, [keepOpen]);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onVis = () => {
+      if (timer) clearTimeout(timer);
+      timer = document.visibilityState === 'hidden' ? setTimeout(() => void vault().relockAll(null), 60_000) : null;
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
   const fullscreen = p.startsWith('/scan') || p.startsWith('/review') || (seg[0] === 'doc' && seg[2] === 'page');
   let screen: ComponentChildren;
   if (p === '/' || p === '') screen = <LibraryScreen view={route.query.get('view') ?? 'all'} />;

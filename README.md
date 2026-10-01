@@ -87,6 +87,10 @@ document envoyé. L’application est une **PWA installable** qui fonctionne hor
   *Haute qualité*) avec **estimation de la taille**.
 - **PDF recherchable** : couche de texte OCR invisible positionnée sous l’image.
 - **Mot de passe PDF** : chiffrement **AES-256** (ISO 32000-2, révision 6).
+- **Documents verrouillés** dans l’application : pages, texte OCR, notes, étiquettes et fichier
+  original chiffrés au repos (AES-256-GCM, clé dérivée du mot de passe par PBKDF2-SHA-256,
+  600 000 itérations). Ouverture temporaire : le document est verrouillé à nouveau dès qu’on le
+  quitte ou après une minute en arrière-plan.
 - Filigrane, numérotation des pages.
 - Export **PDF, JPG, PNG** (ZIP si plusieurs pages), **TXT**, **DOCX** (images + texte),
   fichier original importé. **Téléchargement**, **partage natif** (Web Share), **impression**.
@@ -227,14 +231,15 @@ Détails : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · analyse initiale et p
 
 ## Tests
 
-- **119 tests unitaires** (`bun test`) : classement des 4 coins, géométrie, homographie,
+- **127 tests unitaires** (`bun test`) : classement des 4 coins, géométrie, homographie,
   redressement, détection sur les 11 scènes de la section 31 + 81 scènes aléatoires, comparaison
   avec OpenCV, stabilisation, capture automatique, qualité (flou, sombre, reflet), filtres, pages
   blanches, doublons, orientation, PDF (validés par `qpdf`, `pdfinfo`, `pdftotext`, y compris
   AES-256), ZIP, import DOCX/XLSX/PPTX/TXT, mise en page, recherche, analyse OCR, **OCR réel
-  Tesseract WASM**, modèle documentaire, validation des imports, stockage (persistance, corbeille,
+  Tesseract WASM**, documents verrouillés (chiffrement, mauvais mot de passe, aucune donnée en
+  clair restante), modèle documentaire, validation des imports, stockage (persistance, corbeille,
   dossiers, sauvegarde, écritures concurrentes).
-- **7 scénarios de bout en bout** (Playwright, Chromium mobile, caméra simulée) dont le parcours
+- **8 scénarios de bout en bout** (Playwright, Chromium mobile, caméra simulée) dont le parcours
   complet de la *Definition of Done*.
 
 Détails et résultats : [docs/TESTING.md](docs/TESTING.md).
@@ -296,8 +301,10 @@ Tesseract et ses modèles de langue, ≈ 25 Mo) sont servis par l’application 
   graphiques et SmartArt ignorés, feuilles tronquées à 1 000 lignes × 40 colonnes).
 - **Courbure des pages de livre** : la correction de courbure n’est pas implémentée (le mode Livre
   scinde la double page ; la courbure légère reste visible).
-- **Verrouillage d’un document dans l’application** (coffre chiffré) : non implémenté ; la
-  protection est offerte au niveau du **PDF exporté** (AES-256).
+- **Documents verrouillés** : le titre, le dossier et les dates restent visibles ; un mot de passe
+  oublié rend le document irrécupérable. Supprimer un blob d’IndexedDB ne garantit pas son
+  effacement physique du disque : verrouillez un document confidentiel dès sa création. Les
+  documents non verrouillés ne sont pas chiffrés au repos.
 - **Synchronisation multi-appareils / cloud** : non implémentée ; l’abstraction de stockage et les
   numéros de révision sont prêts, et la sauvegarde ZIP permet de transférer la bibliothèque.
 - **OCR** : texte imprimé uniquement (pas d’écriture manuscrite) ; le texte corrigé à la main est

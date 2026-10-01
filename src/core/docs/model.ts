@@ -69,6 +69,79 @@ export interface DocumentRecord {
   invoice?: InvoiceData;
   /** Monotonic revision for future sync/conflict resolution. */
   revision: number;
+  /**
+   * Present when the document is locked: pages, notes, tags, analysis and original file are
+   * encrypted (see `core/security/vault.ts`); `pages` is then empty and only the title, folder,
+   * dates and favourite flag stay readable.
+   */
+  locked?: DocumentLock;
+  /** The document was opened temporarily and must be locked again (set while it is unlocked). */
+  relockPending?: boolean;
+}
+
+export interface DocumentLock {
+  v: 1;
+  kdf: 'PBKDF2-SHA256';
+  iterations: number;
+  /** Base64 salt. */
+  salt: string;
+  /** Base64 sealed JSON of `LockedContent`. */
+  payload: string;
+  /** Sealed blobs (same ids as stored), so storage, backup and garbage collection keep them. */
+  blobIds: string[];
+  pageCount: number;
+  lockedAt: number;
+}
+
+/** What a lock hides. */
+export interface LockedContent {
+  pages: Page[];
+  notes: string;
+  tags: string[];
+  kind?: DocumentKind;
+  invoice?: InvoiceData;
+  originalFile?: DocumentRecord['originalFile'];
+  /** Plaintext blob id → { sealed blob id, original MIME type }. */
+  blobs: Record<string, { sealed: string; type: string }>;
+}
+
+export function isLocked(d: DocumentRecord): boolean {
+  return d.locked !== undefined;
+}
+
+/** Number of pages, also for a locked document. */
+export function pageCount(d: DocumentRecord): number {
+  return d.locked ? d.locked.pageCount : d.pages.length;
+}
+
+/** Blob ids referenced by pages (images, thumbnails, image annotations) and the original file. */
+export function contentBlobIds(c: { pages: readonly Page[]; originalFile?: DocumentRecord['originalFile'] | undefined }): string[] {
+  const ids: string[] = [];
+  for (const p of c.pages) {
+    ids.push(p.originalBlobId, p.processedBlobId, p.thumbBlobId);
+    for (const a of p.annotations) if (a.type === 'image') ids.push(a.blobId);
+  }
+  if (c.originalFile) ids.push(c.originalFile.blobId);
+  return [...new Set(ids.filter(Boolean))];
+}
+
+/** Returns copies of pages / original file with every blob id replaced through `map` (unknown ids kept). */
+export function remapBlobIds<T extends { pages: Page[]; originalFile?: DocumentRecord['originalFile'] | undefined }>(
+  c: T,
+  map: ReadonlyMap<string, string>,
+): T {
+  const m = (id: string) => map.get(id) ?? id;
+  return {
+    ...c,
+    pages: c.pages.map((p) => ({
+      ...p,
+      originalBlobId: m(p.originalBlobId),
+      processedBlobId: m(p.processedBlobId),
+      thumbBlobId: m(p.thumbBlobId),
+      annotations: p.annotations.map((a) => (a.type === 'image' ? { ...a, blobId: m(a.blobId) } : a)),
+    })),
+    ...(c.originalFile ? { originalFile: { ...c.originalFile, blobId: m(c.originalFile.blobId) } } : {}),
+  };
 }
 
 export interface Folder {

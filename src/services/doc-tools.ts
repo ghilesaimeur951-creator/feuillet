@@ -9,6 +9,7 @@ import { copyPage } from './pages';
 export async function mergeDocuments(lib: Library, ids: readonly string[], title?: string): Promise<DocumentRecord> {
   const docs = ids.map((id) => lib.get(id)).filter((d): d is DocumentRecord => !!d);
   if (docs.length < 2) throw new Error('Sélectionnez au moins deux documents');
+  if (docs.some((d) => d.locked)) throw new Error('Déverrouillez d’abord les documents verrouillés');
   const pages: Page[] = [];
   for (const d of docs) for (const p of d.pages) pages.push(await copyPage(lib, p));
   const first = docs[0] as DocumentRecord;

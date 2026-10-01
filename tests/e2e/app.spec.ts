@@ -268,6 +268,63 @@ test.describe('édition et exports', () => {
   });
 });
 
+test.describe('documents verrouillés', () => {
+  test('verrouiller par mot de passe, contenu masqué, ouverture temporaire et reverrouillage', async ({ page }) => {
+    await freshApp(page);
+    const chooser = page.waitForEvent('filechooser');
+    await page.getByRole('button', { name: 'Importer des fichiers' }).first().click();
+    await (await chooser).setFiles([join(FIX, 'office', 'notes.txt')]);
+    await expect(page).toHaveURL(/#\/doc\//, { timeout: 30_000 });
+    const docUrl = page.url();
+
+    await page.getByRole('button', { name: 'Plus d’actions' }).click();
+    await page.getByRole('menuitem', { name: /Verrouiller par mot de passe/ }).click();
+    await page.getByRole('textbox', { name: 'Verrouiller le document' }).fill('motdepasse');
+    await page.getByRole('button', { name: 'Continuer' }).click();
+    await page.getByRole('textbox', { name: 'Confirmer le mot de passe' }).fill('motdepasse');
+    await page.getByRole('button', { name: 'Verrouiller', exact: true }).click();
+    await expect(page.getByTestId('locked-panel')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('.page-grid')).toHaveCount(0);
+
+    // Content is no longer searchable, the title still is; persists after a reload.
+    await page.goto('/#/search?q=facture EDF');
+    await expect(page.locator('.doc-row')).toHaveCount(0);
+    await page.reload();
+    await page.goto('/');
+    await expect(page.locator('.doc-card')).toHaveCount(1);
+    await expect(page.locator('.doc-card .doc-locked')).toHaveCount(1);
+    await expect(page.locator('.doc-card')).toContainText('Verrouillé');
+
+    // Wrong then right password.
+    await page.goto(docUrl);
+    await page.getByTestId('unlock-password').fill('mauvais-mdp');
+    await page.getByTestId('unlock-submit').click();
+    await expect(page.getByRole('alert')).toContainText('Mot de passe incorrect');
+    await page.getByTestId('unlock-password').fill('motdepasse');
+    await page.getByTestId('unlock-submit').click();
+    await expect(page.locator('.page-grid .page-tile')).toHaveCount(1, { timeout: 30_000 });
+    await expect(page.getByTestId('relock-banner')).toBeVisible();
+
+    // Leaving the document locks it again.
+    await page.getByRole('button', { name: 'Retour' }).click();
+    await expect(page.locator('.doc-card .doc-locked')).toHaveCount(1, { timeout: 30_000 });
+    await page.goto('/#/search?q=facture EDF');
+    await expect(page.locator('.doc-row')).toHaveCount(0);
+
+    // Removing the lock for good.
+    await page.goto(docUrl);
+    await page.getByTestId('unlock-password').fill('motdepasse');
+    await page.getByTestId('unlock-submit').click();
+    await expect(page.locator('.page-grid .page-tile')).toHaveCount(1, { timeout: 30_000 });
+    await page.getByRole('button', { name: 'Plus d’actions' }).click();
+    await page.getByRole('menuitem', { name: /Retirer le verrou/ }).click();
+    await page.getByRole('button', { name: 'Retirer le verrou' }).click();
+    await expect(page.getByTestId('relock-banner')).toHaveCount(0);
+    await page.goto('/#/search?q=facture EDF');
+    await expect(page.locator('.doc-row')).toHaveCount(1);
+  });
+});
+
 test.describe('OCR', () => {
   test('page importée à l’envers : orientation corrigée automatiquement par l’OCR', async ({ page }) => {
     await freshApp(page);

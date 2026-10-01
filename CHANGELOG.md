@@ -1,5 +1,11 @@
 # Journal des modifications
 
+## 1.1.0 — 2026-10-01
+
+- Documents verrouillés : chiffrement local par mot de passe (PBKDF2-SHA-256 600 000 itérations,
+  AES-256-GCM) des pages, du texte, des notes, des étiquettes et du fichier original ; ouverture
+  temporaire avec reverrouillage automatique ; retrait du verrou ; sauvegardes restant chiffrées.
+
 ## 1.0.0 — 2026-09-30
 
 Première version.
