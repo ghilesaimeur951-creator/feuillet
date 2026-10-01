@@ -145,16 +145,6 @@ try {
 
   if (phase === 'first') {
     await waitFor('bibliothèque vide', `return document.body.innerText.includes('Aucun document');`);
-    const w = await waitFor(
-      'caméra (getUserMedia)',
-      `const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}}); const st=s.getVideoTracks()[0].getSettings(); s.getTracks().forEach(x=>x.stop()); return st.width||1;`,
-    );
-    console.log('  largeur vidéo :', w);
-    await evaluate(`location.hash='#/scan'; return true;`);
-    await waitFor('écran scanner : flux vidéo affiché', `const v=document.querySelector('video'); return !!v && v.readyState>=2 && v.videoWidth>0;`, 30_000);
-    await evaluate(`location.hash='#/'; return true;`);
-    await waitFor('retour bibliothèque', `return document.body.innerText.includes('Aucun document');`);
-
     // Import (same path as a drag-and-drop): exercises workers, IndexedDB and image processing.
     const b64 = readFileSync(join(ROOT, 'tests/fixtures/ocr/invoice.jpg')).toString('base64');
     await evaluate(`const bin=Uint8Array.from(atob(${JSON.stringify(b64)}),c=>c.charCodeAt(0)); const dt=new DataTransfer(); dt.items.add(new File([bin],'facture.jpg',{type:'image/jpeg'}));
@@ -175,6 +165,18 @@ try {
     await waitFor('document conservé après redémarrage', `location.hash='#/'; return document.querySelectorAll('.doc-card').length===1;`, 30_000);
     await evaluate(`location.hash='#/search?q=electricite'; return true;`);
     await waitFor('recherche plein texte sur l’OCR', `return document.querySelectorAll('.doc-row').length===1;`, 30_000);
+    // Camera last: the emulated camera is the least stable part of the emulator.
+    await evaluate(`location.hash='#/'; return true;`);
+    const w = await waitFor(
+      'caméra (getUserMedia)',
+      `const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}}); const st=s.getVideoTracks()[0].getSettings(); s.getTracks().forEach(x=>x.stop()); return st.width||1;`,
+    );
+    console.log('  largeur vidéo :', w);
+    await evaluate(`location.hash='#/scan'; return true;`);
+    await waitFor('écran scanner : flux vidéo affiché', `const v=document.querySelector('video'); return !!v && v.readyState>=2 && v.videoWidth>0;`, 30_000);
+    await evaluate(`location.hash='#/'; return true;`);
+    await waitFor('retour bibliothèque', `return !!document.querySelector('.doc-card');`);
+
   }
   if (errors.length) console.log('Erreurs JavaScript (non bloquantes) :', errors.slice(0, 10));
   console.log(`Phase « ${phase} » réussie.`);
