@@ -78,12 +78,11 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Test sur émulateur Android 13
+      - name: Test sur émulateur Android 14
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 33
-          target: aosp_atd
-          channel: canary
+          api-level: 34
+          target: default
           arch: x86_64
           ram-size: 3072M
           disk-size: 4096M
