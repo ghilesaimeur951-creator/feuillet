@@ -17,7 +17,9 @@ import android.provider.OpenableColumns;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsetsController;
+import android.view.ViewGroup;
 import android.webkit.PermissionRequest;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -55,10 +57,21 @@ public class MainActivity extends Activity {
         if (debuggable) WebView.setWebContentsDebuggingEnabled(true);
 
         server = new AssetServer(this);
+        createWebView();
+        applySystemBars(isNight() ? "#10161D" : "#F6F4EF", isNight());
+
+        if (savedInstanceState != null && web.restoreState(savedInstanceState) != null) {
+            // Restored after the process was killed in the background.
+        } else {
+            web.loadUrl(AssetServer.ORIGIN + "/index.html");
+        }
+        handleIntent(getIntent());
+    }
+
+    private void createWebView() {
         web = new WebView(this);
         web.setBackgroundColor(isNight() ? Color.parseColor("#10161D") : Color.parseColor("#F6F4EF"));
         setContentView(web);
-        applySystemBars(isNight() ? "#10161D" : "#F6F4EF", isNight());
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -91,6 +104,20 @@ public class MainActivity extends Activity {
                 }
                 return true;
             }
+
+            @Override
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                // The page's process crashed or was killed to free memory: rebuild the WebView
+                // instead of letting the whole app crash. Documents are safe in IndexedDB.
+                if (view != web) return true;
+                ViewGroup parent = (ViewGroup) view.getParent();
+                if (parent != null) parent.removeView(view);
+                view.destroy();
+                createWebView();
+                web.loadUrl(AssetServer.ORIGIN + "/index.html#/");
+                android.widget.Toast.makeText(MainActivity.this, "Feuillet a redémarré l’affichage (mémoire insuffisante).", android.widget.Toast.LENGTH_LONG).show();
+                return true;
+            }
         });
         web.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -103,13 +130,6 @@ public class MainActivity extends Activity {
                 return openFileChooser(callback, params);
             }
         });
-
-        if (savedInstanceState != null && web.restoreState(savedInstanceState) != null) {
-            // Restored after the process was killed in the background.
-        } else {
-            web.loadUrl(AssetServer.ORIGIN + "/index.html");
-        }
-        handleIntent(getIntent());
     }
 
     private boolean isNight() {
