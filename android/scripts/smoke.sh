@@ -11,6 +11,8 @@ report() {
     { timeout 30 adb logcat -d -b main,system,crash 2>/dev/null | grep -iE "chromium|feuillet|AndroidRuntime|FATAL|lowmemorykiller|lmkd|has died|Killing|renderer|sandboxed_process|DEBUG  " | grep -v Cronet | tail -70; timeout 20 adb shell cat /proc/meminfo | head -4; } > /tmp/logcat.txt 2>&1 || true
     sleep 1
     printf '::error title=smoke (code %s)::%s\n' "$code" "$(tail -70 "$LOG" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+    { echo "--- émulateur :"; pgrep -af "qemu|emulator" | cut -c1-200 || echo "aucun processus émulateur"; echo "--- dmesg :"; sudo dmesg 2>/dev/null | grep -iE "oom|killed|qemu|kvm" | tail -15; free -m; } > /tmp/host.txt 2>&1 || true
+    printf '::error title=hôte::%s\n' "$(sed 's/%/%25/g' /tmp/host.txt | sed ':a;N;$!ba;s/\n/%0A/g')"
     printf '::error title=logcat::%s\n' "$(sed 's/%/%25/g' /tmp/logcat.txt | sed ':a;N;$!ba;s/\n/%0A/g')"
   fi
 }

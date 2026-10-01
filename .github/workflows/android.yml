@@ -84,9 +84,9 @@ jobs:
           api-level: 34
           target: google_apis
           arch: x86_64
-          ram-size: 4096M
+          ram-size: 3072M
           disk-size: 4096M
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated
+          emulator-options: -no-window -gpu guest -noaudio -no-boot-anim -no-snapshot -camera-back emulated
           disable-animations: true
           script: timeout 1500 bash android/scripts/smoke.sh
 
