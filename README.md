@@ -291,13 +291,10 @@ de partage Android, impression Android, et « Partager vers Feuillet » / « Ouv
 les autres applications (images, PDF, Office, texte). Les documents sont exclus des sauvegardes
 cloud d’Android (utilisez la sauvegarde ZIP de l’application).
 
-**Publication** : le workflow `.github/workflows/android.yml` compile l’APK à chaque push, le teste
-sur un émulateur et, pour un tag `vX.Y.Z`, le publie dans la release :
-
-```bash
-# mettre à jour "version" dans package.json, puis :
-git tag v1.2.0 && git push origin v1.2.0
-```
+**Publication** : le workflow `.github/workflows/android.yml` compile l’APK à chaque push sur
+`main`, le teste sur un émulateur puis le publie dans la release `vX.Y.Z` correspondant à la
+`version` de `package.json` (créée au premier push d’une nouvelle version, mise à jour ensuite).
+Pour sortir une nouvelle version : augmentez `version` dans `package.json` et poussez.
 
 **Signature** : sans configuration, l’APK est signé avec la clé **publique** du dépôt
 (`android/signing/feuillet-public.jks`, mot de passe `feuillet-public`) ; les mises à jour

@@ -33,7 +33,7 @@ utilisez Netlify / Cloudflare Pages.)
 `.github/workflows/android.yml` : `bun run build:android` (build web copié dans
 `android/app/src/main/assets/www`, sans `sw.js`), `gradle -p android assembleRelease
 assembleDebug`, vérification `apksigner`, test sur émulateur, puis publication de
-`feuillet-X.Y.Z.apk` dans la release pour un tag `vX.Y.Z`. Signature : voir la section
+`feuillet-X.Y.Z.apk` dans la release `vX.Y.Z` (version de `package.json`) à chaque push sur `main`. Signature : voir la section
 *Application Android* du README (clé publique par défaut, secrets `ANDROID_*` pour une clé
 privée).
 
