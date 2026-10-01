@@ -7,11 +7,17 @@ import { fileURLToPath } from 'node:url';
 const phase = process.argv[2] ?? 'first';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Never end with an unsettled await (exit code 13): fail loudly instead.
+const watchdog = setTimeout(() => {
+  console.error('Délai global dépassé');
+  process.exit(1);
+}, 9 * 60_000);
 
 async function target() {
   for (let i = 0; i < 60; i++) {
     try {
-      const list = await (await fetch('http://127.0.0.1:9222/json')).json();
+      const list = await (await fetch('http://127.0.0.1:9222/json', { signal: AbortSignal.timeout(5000) })).json();
+      if (i % 10 === 0) console.log('DevTools /json :', JSON.stringify(list).slice(0, 600));
       const t = list.find((x) => x.type === 'page' && x.url.includes('appassets.androidplatform.net'));
       if (t) return t;
     } catch {}
@@ -22,11 +28,25 @@ async function target() {
 
 const t = await target();
 console.log('Page :', t.url);
-const ws = new WebSocket(t.webSocketDebuggerUrl);
+const wsUrl = (t.webSocketDebuggerUrl ?? `ws://127.0.0.1:9222/devtools/page/${t.id}`).replace('localhost', '127.0.0.1');
+console.log('WebSocket :', wsUrl);
+const ws = new WebSocket(wsUrl);
 await new Promise((res, rej) => {
-  ws.onopen = res;
-  ws.onerror = rej;
+  const timer = setTimeout(() => rej(new Error('WebSocket DevTools : pas de connexion en 20 s')), 20_000);
+  ws.onopen = () => {
+    clearTimeout(timer);
+    res();
+  };
+  ws.onerror = (e) => {
+    clearTimeout(timer);
+    rej(new Error(`WebSocket DevTools : erreur ${e?.message ?? ''}`));
+  };
+  ws.onclose = (e) => {
+    clearTimeout(timer);
+    rej(new Error(`WebSocket DevTools fermé (${e.code} ${e.reason})`));
+  };
 });
+ws.onclose = (e) => console.error(`WebSocket fermé (${e.code})`);
 let seq = 0;
 const pending = new Map();
 const errors = [];
@@ -42,9 +62,16 @@ ws.onmessage = (e) => {
   }
 };
 const send = (method, params = {}) =>
-  new Promise((r) => {
+  new Promise((r, rej) => {
     const id = ++seq;
-    pending.set(id, r);
+    const timer = setTimeout(() => {
+      pending.delete(id);
+      rej(new Error(`CDP ${method} : pas de réponse`));
+    }, 30_000);
+    pending.set(id, (m) => {
+      clearTimeout(timer);
+      r(m);
+    });
     ws.send(JSON.stringify({ id, method, params }));
   });
 await send('Runtime.enable');
@@ -113,6 +140,7 @@ try {
   }
   if (errors.length) console.log('Erreurs JavaScript (non bloquantes) :', errors.slice(0, 10));
   console.log(`Phase « ${phase} » réussie.`);
+  clearTimeout(watchdog);
   ws.close();
   process.exit(0);
 } catch (e) {

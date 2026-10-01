@@ -2,6 +2,19 @@
 # Emulator smoke test of the APKs built by the CI (see .github/workflows/android.yml).
 set -euo pipefail
 cd "$(dirname "$0")/../.."
+LOG=/tmp/smoke.log
+exec > >(tee "$LOG") 2>&1
+# On failure, the end of the log and of logcat become annotations (readable through the API).
+report() {
+  local code=$?
+  if [ "$code" -ne 0 ]; then
+    adb logcat -d 2>/dev/null | grep -iE "chromium|feuillet|AndroidRuntime|FATAL|cr_" | tail -60 > /tmp/logcat.txt || true
+    sleep 1
+    printf '::error title=smoke (code %s)::%s\n' "$code" "$(tail -70 "$LOG" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+    printf '::error title=logcat::%s\n' "$(sed 's/%/%25/g' /tmp/logcat.txt | sed ':a;N;$!ba;s/\n/%0A/g')"
+  fi
+}
+trap report EXIT
 DEBUG_APK=$(ls apk/*-debug.apk | head -1)
 RELEASE_APK=$(ls apk/*.apk | grep -v -- -debug | head -1)
 PKG=app.feuillet.scanner.debug
