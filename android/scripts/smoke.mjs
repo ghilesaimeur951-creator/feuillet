@@ -141,6 +141,8 @@ const clickText = (text) =>
 
 try {
   await waitFor('application démarrée', `return !!document.querySelector('.app') && !document.querySelector('.fatal');`);
+  console.log('WebView :', await evaluate(`return navigator.userAgent`));
+  await evaluate(`window.__errs=[]; addEventListener('error',e=>__errs.push(String(e.message))); addEventListener('unhandledrejection',e=>__errs.push(String(e.reason&&e.reason.stack||e.reason))); return true;`);
   await waitFor('pont natif présent, pas de service worker', `return typeof FeuilletAndroid==='object' && (await navigator.serviceWorker.getRegistrations()).length===0;`);
 
   if (phase === 'first') {
@@ -186,6 +188,9 @@ try {
 } catch (e) {
   console.error(e.message);
   console.error('Erreurs JavaScript :', errors.slice(0, 20));
+  try {
+    console.error('Erreurs page :', await evaluate(`return JSON.stringify(window.__errs||[]).slice(0,3000) + ' | toasts: ' + [...document.querySelectorAll('.toast')].map(t=>t.textContent).join(' / ')`));
+  } catch {}
   try {
     console.error('Texte affiché :', (await evaluate(`return document.body.innerText.slice(0,1500)`)) ?? '');
   } catch {}
