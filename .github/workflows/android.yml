@@ -63,7 +63,7 @@ jobs:
   emulator-test:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -88,7 +88,7 @@ jobs:
           disk-size: 4096M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated
           disable-animations: true
-          script: bash android/scripts/smoke.sh
+          script: timeout 1500 bash android/scripts/smoke.sh
 
   release:
     needs: emulator-test

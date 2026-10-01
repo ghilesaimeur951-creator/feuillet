@@ -8,13 +8,16 @@ exec > >(tee "$LOG") 2>&1
 report() {
   local code=$?
   if [ "$code" -ne 0 ]; then
-    adb logcat -d 2>/dev/null | grep -iE "chromium|feuillet|AndroidRuntime|FATAL|cr_" | tail -60 > /tmp/logcat.txt || true
+    timeout 30 adb logcat -d 2>/dev/null | grep -iE "chromium|feuillet|AndroidRuntime|FATAL" | grep -v Cronet | tail -60 > /tmp/logcat.txt || true
     sleep 1
     printf '::error title=smoke (code %s)::%s\n' "$code" "$(tail -70 "$LOG" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
     printf '::error title=logcat::%s\n' "$(sed 's/%/%25/g' /tmp/logcat.txt | sed ':a;N;$!ba;s/\n/%0A/g')"
   fi
 }
 trap report EXIT
+trap 'echo "Délai global du test dépassé"; exit 124' TERM
+step() { echo "== [$(date +%H:%M:%S)] $*"; }
+A() { timeout 60 adb "$@"; }
 DEBUG_APK=$(ls apk/*-debug.apk | head -1)
 RELEASE_APK=$(ls apk/*.apk | grep -v -- -debug | head -1)
 PKG=app.feuillet.scanner.debug
@@ -22,40 +25,42 @@ PKG=app.feuillet.scanner.debug
 forward() {
   local pid=""
   for _ in $(seq 1 60); do
-    pid=$(adb shell pidof "$PKG" | tr -d '\r' || true)
-    [ -n "$pid" ] && adb shell cat /proc/net/unix | grep -q "webview_devtools_remote_$pid" && break
+    pid=$(A shell pidof "$PKG" | tr -d '\r' || true)
+    [ -n "$pid" ] && A shell cat /proc/net/unix > /tmp/unix.txt && grep -q "webview_devtools_remote_$pid" /tmp/unix.txt && break
     sleep 1
   done
-  [ -n "$pid" ] || { echo "Application non démarrée"; adb logcat -d | grep -iE "AndroidRuntime|feuillet" | tail -50; exit 1; }
-  adb forward --remove-all || true
-  adb forward tcp:9222 "localabstract:webview_devtools_remote_$pid"
+  [ -n "$pid" ] || { echo "Application non démarrée"; A logcat -d | grep -iE "AndroidRuntime|feuillet" | tail -50; exit 1; }
+  A forward --remove-all || true
+  A forward tcp:9222 "localabstract:webview_devtools_remote_$pid"
 }
 
-adb wait-for-device
-adb shell settings put global window_animation_scale 0 || true
-echo "== Installation de $DEBUG_APK (permissions accordées)"
-adb install -r -g "$DEBUG_APK"
-adb shell am start -W -n "$PKG/app.feuillet.scanner.MainActivity"
+step "Appareil"
+timeout 300 adb wait-for-device
+A shell getprop ro.build.version.release
+step "Installation de $DEBUG_APK (permissions accordées)"
+timeout 300 adb install -r -g "$DEBUG_APK"
+A shell am start -W -n "$PKG/app.feuillet.scanner.MainActivity"
 forward
-node android/scripts/smoke.mjs first
+step "Parcours principal"
+timeout 600 node android/scripts/smoke.mjs first
 
-echo "== Export PDF présent dans Téléchargements/Feuillet ?"
-adb shell ls -l /sdcard/Download/Feuillet/
-adb shell ls /sdcard/Download/Feuillet/ | grep -q '\.pdf' || { echo "PDF exporté introuvable"; exit 1; }
+step "Export PDF présent dans Téléchargements/Feuillet ?"
+A shell ls -l /sdcard/Download/Feuillet/
+A shell ls /sdcard/Download/Feuillet/ | grep -q '\.pdf' || { echo "PDF exporté introuvable"; exit 1; }
 
-echo "== Redémarrage complet : persistance"
-adb shell am force-stop "$PKG"
+step "Redémarrage complet : persistance"
+A shell am force-stop "$PKG"
 sleep 2
-adb shell am start -W -n "$PKG/app.feuillet.scanner.MainActivity"
+A shell am start -W -n "$PKG/app.feuillet.scanner.MainActivity"
 forward
-node android/scripts/smoke.mjs persist
+timeout 300 node android/scripts/smoke.mjs persist
 
-echo "== APK de publication : installation et démarrage"
-adb install -r "$RELEASE_APK"
-adb logcat -c
-adb shell am start -W -n "app.feuillet.scanner/app.feuillet.scanner.MainActivity"
+step "APK de publication : installation et démarrage"
+timeout 300 adb install -r "$RELEASE_APK"
+A logcat -c
+A shell am start -W -n "app.feuillet.scanner/app.feuillet.scanner.MainActivity"
 sleep 8
-adb shell pidof app.feuillet.scanner >/dev/null || { echo "L’APK de publication ne démarre pas"; adb logcat -d | grep -iE "AndroidRuntime|FATAL" | tail -40; exit 1; }
-if adb logcat -d | grep -q "FATAL EXCEPTION"; then adb logcat -d | grep -A20 "FATAL EXCEPTION"; exit 1; fi
+A shell pidof app.feuillet.scanner >/dev/null || { echo "L’APK de publication ne démarre pas"; A logcat -d | grep -iE "AndroidRuntime|FATAL" | tail -40; exit 1; }
+if A logcat -d | grep -q "FATAL EXCEPTION"; then A logcat -d | grep -A20 "FATAL EXCEPTION"; exit 1; fi
 echo "Tests Android réussis."
-printf '::notice title=Test émulateur Android::%s\n' "$(grep -E '^(✓|==|  largeur)' "$LOG" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
+printf '::notice title=Test émulateur Android::%s\n' "$(grep -E '^(✓|==|  largeur|Connecté)' "$LOG" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"

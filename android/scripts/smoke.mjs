@@ -11,10 +11,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const watchdog = setTimeout(() => {
   console.error('Délai global dépassé');
   process.exit(1);
-}, 9 * 60_000);
+}, 8 * 60_000);
 
 async function target() {
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 30; i++) {
     try {
       const list = await (await fetch('http://127.0.0.1:9222/json', { signal: AbortSignal.timeout(5000) })).json();
       if (i % 10 === 0) console.log('DevTools /json :', JSON.stringify(list).slice(0, 600));
@@ -33,7 +33,7 @@ const errors = [];
 
 /** (Re)connects to the page; the DevTools socket can drop (1006) while the WebView starts. */
 async function connect() {
-  for (let attempt = 1; attempt <= 15; attempt++) {
+  for (let attempt = 1; attempt <= 8; attempt++) {
     const t = await target();
     const wsUrl = (t.webSocketDebuggerUrl ?? `ws://127.0.0.1:9222/devtools/page/${t.id}`).replace('localhost', '127.0.0.1');
     try {
