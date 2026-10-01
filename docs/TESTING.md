@@ -88,7 +88,9 @@ fictive posée en perspective sur une table, avec un léger tremblement de la ma
 débogage par le protocole DevTools de la WebView (`android/scripts/smoke.mjs`) :
 
 1. démarrage, pont natif présent, aucun service worker ;
-2. caméra : `getUserMedia` (caméra émulée) puis écran scanner avec flux vidéo ;
+2. caméra : `getUserMedia` puis écran scanner avec flux vidéo — validé sur l’image Android 14
+   *Google APIs* (caméra émulée 480 px) ; l’image sans services Google utilisée en CI (plus stable)
+   n’a pas de caméra utilisable : l’étape y est signalée comme non testée ;
 3. import d’une facture (workers, IndexedDB), **OCR** Tesseract servi depuis l’APK ;
 4. **export PDF** par le pont natif → fichier présent dans `Download/Feuillet` ;
 5. arrêt forcé puis redémarrage : document conservé, recherche plein texte sur l’OCR ;

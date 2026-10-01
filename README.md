@@ -249,9 +249,10 @@ Détails : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · analyse initiale et p
   dossiers, sauvegarde, écritures concurrentes).
 - **8 scénarios de bout en bout** (Playwright, Chromium mobile, caméra simulée) dont le parcours
   complet de la *Definition of Done*.
-- **Test Android sur émulateur** (GitHub Actions, Android 14) : installation de l’APK, caméra,
-  écran scanner, import, OCR, export PDF dans *Téléchargements*, persistance après redémarrage,
-  démarrage de l’APK signé.
+- **Test Android sur émulateur** (GitHub Actions, Android 14, WebView Chrome 113) : installation
+  de l’APK, import, OCR, export PDF dans *Téléchargements*, persistance après redémarrage, recherche,
+  démarrage de l’APK signé. La caméra et l’écran scanner ont été validés sur l’image *Google APIs* ;
+  l’image utilisée en CI n’a pas de caméra virtuelle fonctionnelle.
 
 Détails et résultats : [docs/TESTING.md](docs/TESTING.md).
 
