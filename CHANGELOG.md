@@ -1,5 +1,12 @@
 # Journal des modifications
 
+## 1.2.0 — 2026-10-01
+
+- Application Android (APK publiée dans les releases GitHub) : WebView servant l’application depuis
+  le paquet, hors ligne et sans permission Internet ; caméra, sélecteur de fichiers, export dans
+  Téléchargements, partage et impression Android, « Partager vers Feuillet ».
+- Compilation, test sur émulateur Android 14 et publication automatiques (GitHub Actions).
+
 ## 1.1.0 — 2026-10-01
 
 - Documents verrouillés : chiffrement local par mot de passe (PBKDF2-SHA-256 600 000 itérations,

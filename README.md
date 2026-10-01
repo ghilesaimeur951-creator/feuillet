@@ -9,8 +9,12 @@ annotations et signature.
 Tout s’exécute **dans le navigateur, sur l’appareil** : aucun compte, aucun serveur, aucun
 document envoyé. L’application est une **PWA installable** qui fonctionne hors ligne.
 
-**Essayer : https://ghilesaimeur951-creator.github.io/feuillet/** (ouvrez-la sur votre téléphone,
-autorisez la caméra, puis *Partager → Sur l’écran d’accueil* ou *Installer l’application*).
+**Android : téléchargez l’APK dans les [Releases](https://github.com/ghilesaimeur951-creator/feuillet/releases/latest)**
+(fichier `feuillet-x.y.z.apk`, voir [Application Android](#application-android-apk)).
+
+**Version web : https://ghilesaimeur951-creator.github.io/feuillet/** (ouvrez-la sur votre
+téléphone, autorisez la caméra, puis *Partager → Sur l’écran d’accueil* ou *Installer
+l’application*).
 
 | Scanner (détection temps réel) | Recadrage manuel | Document + OCR + facture | Filtres |
 |---|---|---|---|
@@ -33,7 +37,7 @@ autorisez la caméra, puis *Partager → Sur l’écran d’accueil* ou *Install
 4. [Stack et architecture](#stack-et-architecture)
 5. [Scripts](#scripts)
 6. [Tests](#tests)
-7. [Déploiement](#déploiement)
+7. [Déploiement](#déploiement) · [Application Android (APK)](#application-android-apk)
 8. [Confidentialité et sécurité](#confidentialité-et-sécurité)
 9. [Services externes](#services-externes)
 10. [Limitations connues](#limitations-connues)
@@ -226,6 +230,7 @@ Détails : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · analyse initiale et p
 | `bun run test` | tests unitaires |
 | `bun run test:e2e` | build + tests de bout en bout Playwright |
 | `bun run check` | type-check + lint + tests unitaires |
+| `bun run build:android` | build web + copie dans le projet Android (`android/`) |
 | `python3 scripts/gen_cv_fixtures.py` | régénère les scènes de test de la vision |
 | `python3 scripts/gen_e2e_video.py` | régénère le flux caméra simulé |
 | `python3 scripts/opencv_baseline.py` | chaîne OpenCV de référence pour comparaison |
@@ -244,6 +249,9 @@ Détails : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · analyse initiale et p
   dossiers, sauvegarde, écritures concurrentes).
 - **8 scénarios de bout en bout** (Playwright, Chromium mobile, caméra simulée) dont le parcours
   complet de la *Definition of Done*.
+- **Test Android sur émulateur** (GitHub Actions, Android 14) : installation de l’APK, caméra,
+  écran scanner, import, OCR, export PDF dans *Téléchargements*, persistance après redémarrage,
+  démarrage de l’APK signé.
 
 Détails et résultats : [docs/TESTING.md](docs/TESTING.md).
 
@@ -267,6 +275,44 @@ sous-dossier). Il suffit de le servir en **HTTPS**.
 - **Netlify / Vercel / Cloudflare Pages** : commande `bun run build`, dossier `dist`.
 - **Nginx / Apache** : copiez `dist/` ; configuration recommandée dans
   [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+### Application Android (APK)
+
+**Installer** : sur le téléphone, ouvrez la page
+[Releases](https://github.com/ghilesaimeur951-creator/feuillet/releases/latest), téléchargez
+`feuillet-x.y.z.apk` (section *Assets*), ouvrez-le et autorisez l’installation depuis cette source
+(*Sources inconnues*). Android 7.0 minimum.
+
+L’APK embarque **la même application** que le site, servie depuis le paquet par une WebView
+(origine `https://appassets.androidplatform.net`, aucune requête réseau) : tout fonctionne hors
+ligne et l’application **ne demande pas la permission Internet**. Ajouts natifs : permission
+caméra Android, sélecteur de fichiers du système, export dans *Téléchargements/Feuillet*, feuille
+de partage Android, impression Android, et « Partager vers Feuillet » / « Ouvrir avec » depuis
+les autres applications (images, PDF, Office, texte). Les documents sont exclus des sauvegardes
+cloud d’Android (utilisez la sauvegarde ZIP de l’application).
+
+**Publication** : le workflow `.github/workflows/android.yml` compile l’APK à chaque push, le teste
+sur un émulateur et, pour un tag `vX.Y.Z`, le publie dans la release :
+
+```bash
+# mettre à jour "version" dans package.json, puis :
+git tag v1.2.0 && git push origin v1.2.0
+```
+
+**Signature** : sans configuration, l’APK est signé avec la clé **publique** du dépôt
+(`android/signing/feuillet-public.jks`, mot de passe `feuillet-public`) ; les mises à jour
+s’installent par-dessus la version précédente. Cette clé étant publique, n’importe qui peut
+signer un APK « Feuillet » : n’installez que des APK téléchargés depuis ce dépôt. Pour une
+distribution publique, créez une clé privée et ajoutez les secrets `ANDROID_KEYSTORE_BASE64`,
+`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` (*Settings → Secrets and
+variables → Actions*) ; changer de clé impose de désinstaller une fois l’ancienne version.
+
+**Compiler localement** (Android SDK + JDK 17 + Gradle 8.10) :
+
+```bash
+bun run build:android
+gradle -p android assembleRelease   # → android/app/build/outputs/apk/release/
+```
 
 ---
 
@@ -313,6 +359,8 @@ Tesseract et ses modèles de langue, ≈ 25 Mo) sont servis par l’application 
 - **OCR** : texte imprimé uniquement (pas d’écriture manuscrite) ; le texte corrigé à la main est
   utilisé pour la recherche et les exports texte, la couche invisible du PDF garde les positions
   d’origine.
+- **Application Android** : pas de lampe pilotable dans toutes les WebView ; l’APK n’est pas
+  publié sur le Play Store (installation manuelle).
 - **iOS / Safari** : Safari 16.4+ requis (OffscreenCanvas, CompressionStream). Sur iOS, la capture
   utilise le flux vidéo (pas d’API ImageCapture), la lampe n’est pas toujours pilotable, l’installation se
   fait via *Partager → Sur l’écran d’accueil*. Le stockage d’une PWA peut être purgé par iOS après

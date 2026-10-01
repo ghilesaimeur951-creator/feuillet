@@ -58,3 +58,4 @@ sleep 8
 adb shell pidof app.feuillet.scanner >/dev/null || { echo "L’APK de publication ne démarre pas"; adb logcat -d | grep -iE "AndroidRuntime|FATAL" | tail -40; exit 1; }
 if adb logcat -d | grep -q "FATAL EXCEPTION"; then adb logcat -d | grep -A20 "FATAL EXCEPTION"; exit 1; fi
 echo "Tests Android réussis."
+printf '::notice title=Test émulateur Android::%s\n' "$(grep -E '^(✓|==|  largeur)' "$LOG" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')"

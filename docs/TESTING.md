@@ -82,9 +82,22 @@ fictive posée en perspective sur une table, avec un léger tremblement de la ma
    recherche, persistance après rechargement, mauvais mot de passe refusé, ouverture temporaire,
    **reverrouillage automatique** en quittant, retrait définitif du verrou.
 
+## Test Android sur émulateur
+
+`android/scripts/smoke.sh` (workflow `android.yml`, émulateur Android 14 x86_64) pilote l’APK de
+débogage par le protocole DevTools de la WebView (`android/scripts/smoke.mjs`) :
+
+1. démarrage, pont natif présent, aucun service worker ;
+2. caméra : `getUserMedia` (caméra émulée) puis écran scanner avec flux vidéo ;
+3. import d’une facture (workers, IndexedDB), **OCR** Tesseract servi depuis l’APK ;
+4. **export PDF** par le pont natif → fichier présent dans `Download/Feuillet` ;
+5. arrêt forcé puis redémarrage : document conservé, recherche plein texte sur l’OCR ;
+6. installation et démarrage de l’**APK signé** de publication, sans plantage.
+
 ## Résultats (dernière exécution)
 
 - Type-check : OK (0 erreur).
 - Lint : OK (116 fichiers).
 - Tests unitaires : **127 / 127**.
 - Tests de bout en bout : **8 / 8**.
+- Test Android sur émulateur : **réussi**.

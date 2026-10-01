@@ -28,6 +28,15 @@ Le workflow `.github/workflows/deploy.yml` construit et publie `dist/` à chaque
 (GitHub Pages sur un dépôt privé nécessite un compte payant ; sinon rendez le dépôt public ou
 utilisez Netlify / Cloudflare Pages.)
 
+## Application Android (APK)
+
+`.github/workflows/android.yml` : `bun run build:android` (build web copié dans
+`android/app/src/main/assets/www`, sans `sw.js`), `gradle -p android assembleRelease
+assembleDebug`, vérification `apksigner`, test sur émulateur, puis publication de
+`feuillet-X.Y.Z.apk` dans la release pour un tag `vX.Y.Z`. Signature : voir la section
+*Application Android* du README (clé publique par défaut, secrets `ANDROID_*` pour une clé
+privée).
+
 ## Netlify, Cloudflare Pages, Vercel
 
 - Commande de build : `bun run build` (Bun est disponible sur ces plateformes ; sinon

@@ -161,3 +161,20 @@ aucune requête externe.
 ## Sécurité
 
 Voir [SECURITY.md](SECURITY.md).
+
+## Application Android
+
+`android/` est une coquille native minimale (Java, sans dépendance AndroidX) autour d’une
+WebView :
+
+- `AssetServer` sert `assets/www` (le build web) sur l’origine HTTPS
+  `https://appassets.androidplatform.net` via `shouldInterceptRequest` : IndexedDB, workers, WASM
+  et `getUserMedia` fonctionnent comme sur le site, sans réseau (pas de permission Internet) ;
+- `MainActivity` relaie la permission caméra, le sélecteur de fichiers, le bouton retour (ferme
+  d’abord les feuilles ouvertes) et les fichiers reçus par « Partager vers Feuillet » ;
+- `NativeBridge` (`window.FeuilletAndroid`) : enregistrement dans *Téléchargements/Feuillet*
+  (MediaStore), partage (`ShareProvider`, fournisseur de contenu en lecture seule) et impression
+  (`PdfPrintAdapter`), couleur des barres système.
+
+Côté web, `src/services/native.ts` détecte le pont ; `exporter.ts` l’utilise pour
+télécharger, partager et imprimer, et le service worker n’est pas enregistré dans l’APK.
