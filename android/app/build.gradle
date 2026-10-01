@@ -1,0 +1,74 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Version taken from package.json (single source of truth), e.g. 1.2.0 -> versionCode 10200.
+def pkg = new groovy.json.JsonSlurper().parse(rootProject.file('../package.json'))
+def appVersion = pkg.version as String
+def parts = appVersion.tokenize('.').collect { it.replaceAll('[^0-9]', '') as int }
+def appVersionCode = parts[0] * 10000 + parts[1] * 100 + parts[2]
+
+// Signing: secrets from the CI environment when they exist, otherwise the public key committed in
+// android/signing (see android/README.md — fine for personal installs, not for store distribution).
+def ksFile = System.getenv('FEUILLET_KEYSTORE_FILE') ?: rootProject.file('signing/feuillet-public.jks').path
+def ksPass = System.getenv('FEUILLET_KEYSTORE_PASSWORD') ?: 'feuillet-public'
+def ksAlias = System.getenv('FEUILLET_KEY_ALIAS') ?: 'feuillet'
+def ksKeyPass = System.getenv('FEUILLET_KEY_PASSWORD') ?: 'feuillet-public'
+
+android {
+    namespace 'app.feuillet.scanner'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'app.feuillet.scanner'
+        minSdk 24
+        targetSdk 35
+        versionCode appVersionCode
+        versionName appVersion
+    }
+
+    signingConfigs {
+        release {
+            storeFile file(ksFile)
+            storePassword ksPass
+            keyAlias ksAlias
+            keyPassword ksKeyPass
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+        debug {
+            applicationIdSuffix '.debug'
+            versionNameSuffix '-debug'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    androidResources {
+        // Already-compressed or large binary assets: store them as is (faster loading).
+        noCompress += ['wasm', 'traineddata', 'png', 'jpg', 'webp', 'woff2']
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "feuillet-${appVersion}${variant.buildType.name == 'debug' ? '-debug' : ''}.apk"
+        }
+    }
+}
+
+// The web build (dist/) must be copied into src/main/assets/www before assembling.
+tasks.register('checkWebAssets') {
+    doLast {
+        if (!file('src/main/assets/www/index.html').exists())
+            throw new GradleException('Assets web absents : lancez « bun run build:android » à la racine du dépôt.')
+    }
+}
+preBuild.dependsOn 'checkWebAssets'

@@ -7,7 +7,7 @@ export function appUrl(path: string): string {
 }
 
 export const APP_NAME = 'Feuillet';
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.2.0';
 
 export const OCR_LANGUAGES: ReadonlyArray<{ code: string; label: string }> = [
   { code: 'fra', label: 'Français' },

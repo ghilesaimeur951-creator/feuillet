@@ -1,6 +1,6 @@
 {
   "name": "feuillet",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Scanner de documents local-first : détection temps réel, redressement, filtres, PDF recherchables, OCR hors ligne et bibliothèque.",
   "private": true,
   "type": "module",
@@ -14,7 +14,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "lint": "bun scripts/lint.ts && prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"scripts/**/*.ts\"",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"scripts/**/*.ts\"",
-    "check": "bun run typecheck && bun run lint && bun run test"
+    "check": "bun run typecheck && bun run lint && bun run test",
+    "build:android": "bun scripts/build.ts && bun scripts/android-assets.ts"
   },
   "dependencies": {
     "preact": "10.29.8"

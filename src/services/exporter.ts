@@ -1,3 +1,4 @@
+import { blobToBase64, nativeBridge, nativeFileName } from './native';
 import type { DocumentRecord, Page } from '../core/docs/model';
 import { documentText } from '../core/docs/model';
 import { buildDocx } from '../core/office/docx-writer';
@@ -132,6 +133,11 @@ export async function exportDocx(lib: Library, doc: DocumentRecord, includeImage
 }
 
 export function downloadBlob(blob: Blob, filename: string): void {
+  const android = nativeBridge();
+  if (android) {
+    void blobToBase64(blob).then((b64) => android.saveFile(nativeFileName(filename), blob.type || 'application/octet-stream', b64));
+    return;
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -144,6 +150,7 @@ export function downloadBlob(blob: Blob, filename: string): void {
 }
 
 export function canShareFiles(): boolean {
+  if (nativeBridge()) return true;
   try {
     return typeof navigator.canShare === 'function' && navigator.canShare({ files: [new File([''], 'x.pdf', { type: 'application/pdf' })] });
   } catch {
@@ -153,6 +160,11 @@ export function canShareFiles(): boolean {
 
 /** Native share sheet (mobile). Returns false when the platform cannot share files. */
 export async function shareBlob(blob: Blob, filename: string, title: string): Promise<'shared' | 'cancelled' | 'unsupported'> {
+  const android = nativeBridge();
+  if (android) {
+    android.shareFile(nativeFileName(filename), blob.type || 'application/octet-stream', await blobToBase64(blob), title);
+    return 'shared';
+  }
   const file = new File([blob], filename, { type: blob.type });
   if (typeof navigator.share !== 'function' || typeof navigator.canShare !== 'function' || !navigator.canShare({ files: [file] }))
     return 'unsupported';
@@ -166,7 +178,12 @@ export async function shareBlob(blob: Blob, filename: string, title: string): Pr
 }
 
 /** Prints a PDF through a hidden iframe (falls back to opening it in a new tab). */
-export function printPdf(blob: Blob): void {
+export function printPdf(blob: Blob, name = 'document.pdf'): void {
+  const android = nativeBridge();
+  if (android) {
+    void blobToBase64(blob).then((b64) => android.printPdf(nativeFileName(name), b64));
+    return;
+  }
   const url = URL.createObjectURL(blob);
   const frame = document.createElement('iframe');
   frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';

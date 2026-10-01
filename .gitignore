@@ -10,3 +10,9 @@ playwright-report/
 .DS_Store
 tests/e2e/.artifacts/
 .cert/
+android/.gradle/
+android/build/
+android/app/build/
+android/app/src/main/assets/www/
+android/local.properties
+apk/

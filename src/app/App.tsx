@@ -3,6 +3,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { importFlow, openImportPicker, scanTo } from './actions';
 import { navigate, useRoute } from './router';
 import { storageWarning, useSettings, vault } from './state';
+import { nativeBridge } from '../services/native';
 import { Icon } from '../ui/components/Icon';
 import type { IconName } from '../ui/components/Icon';
 import { Overlays } from '../ui/components/Overlays';
@@ -31,6 +32,7 @@ function applyTheme(theme: 'system' | 'light' | 'dark') {
   const dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#10161d' : '#f6f4ef');
+  nativeBridge()?.setSystemBars(dark ? '#10161d' : '#f6f4ef', dark);
 }
 
 export function App() {

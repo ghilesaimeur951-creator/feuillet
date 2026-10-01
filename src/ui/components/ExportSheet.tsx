@@ -130,7 +130,7 @@ export function ExportSheet({
       }),
     );
     if (blob) {
-      printPdf(blob);
+      printPdf(blob, exportFileName(doc.title, 'pdf'));
       log('Impression');
     }
   };

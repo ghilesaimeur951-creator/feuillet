@@ -1,0 +1,118 @@
+name: Android (APK)
+
+# Builds the Android app (WebView shell + the same web build), tests it on an emulator and, for a
+# version tag (v1.2.0…), publishes the APK in the GitHub release.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install
+      - name: Build web + copie dans le projet Android
+        run: bun run build:android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Clé de signature privée (si les secrets existent)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        if: env.HAS_KEYSTORE == 'true'
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "FEUILLET_KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+      - name: Compilation des APK
+        env:
+          FEUILLET_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          FEUILLET_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          FEUILLET_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: gradle -p android assembleRelease assembleDebug --no-daemon --stacktrace
+      - name: Vérification de la signature
+        run: |
+          mkdir -p apk
+          cp android/app/build/outputs/apk/release/*.apk android/app/build/outputs/apk/debug/*.apk apk/
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          for f in apk/*.apk; do echo "== $f"; "$BT/apksigner" verify --print-certs "$f" | head -3; ls -l "$f"; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: apk/*.apk
+
+  emulator-test:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: apk
+          path: apk
+      - name: Activer KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Test sur émulateur Android 14
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          ram-size: 4096M
+          disk-size: 4096M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated
+          disable-animations: true
+          script: bash android/scripts/smoke.sh
+
+  release:
+    needs: emulator-test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: apk
+          path: apk
+      - name: Publication de la release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Feuillet ${{ github.ref_name }}
+          files: |
+            apk/feuillet-*[0-9].apk
+          body: |
+            ## Installer sur Android
+
+            1. Sur votre téléphone, téléchargez le fichier **`feuillet-….apk`** ci-dessous (section *Assets*).
+            2. Ouvrez le fichier téléchargé. Android demande d’autoriser l’installation depuis votre navigateur ou
+               votre gestionnaire de fichiers (*Sources inconnues*) : acceptez pour cette installation.
+            3. Appuyez sur **Installer**, puis ouvrez **Feuillet**. Autorisez la caméra au premier scan.
+
+            Android 7.0 ou plus récent. L’application fonctionne entièrement hors ligne : elle ne demande même
+            pas l’accès à Internet, vos documents ne quittent jamais le téléphone.
+
+            Version web (sans installation) : https://ghilesaimeur951-creator.github.io/feuillet/

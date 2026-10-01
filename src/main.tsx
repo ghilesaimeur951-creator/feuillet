@@ -5,6 +5,8 @@ import { restoreSession, sessionBlobIds } from './services/scan-session';
 import { listSignatures } from './services/signatures';
 import { navigate } from './app/router';
 import { appUrl } from './services/config';
+import { isAndroidApp, takeSharedFiles } from './services/native';
+import { importFlow } from './app/actions';
 import './ui/styles.css';
 import './ui/editor.css';
 
@@ -33,6 +35,15 @@ async function boot() {
     }
     root.innerHTML = '';
     render(<App />, root);
+    // Android app: files shared to Feuillet (at start-up, or later while it runs).
+    if (isAndroidApp()) {
+      const receive = async () => {
+        const files = await takeSharedFiles();
+        if (files.length) await importFlow(files);
+      };
+      (window as { __feuilletShared?: () => void }).__feuilletShared = () => void receive();
+      void receive();
+    }
     if (session && !location.hash.startsWith('#/review') && !location.hash.startsWith('#/scan')) {
       toast(
         `Un scan interrompu (${session.captures.length} page${session.captures.length > 1 ? 's' : ''}) peut être repris.`,
@@ -44,7 +55,8 @@ async function boot() {
   } catch (e) {
     root.innerHTML = `<div class="fatal"><h1>Impossible de démarrer Feuillet</h1><p>${e instanceof Error ? e.message.replace(/[<>&]/g, '') : 'Erreur inconnue'}</p></div>`;
   }
-  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  // The Android app serves its files from the APK itself: no service worker needed there.
+  if (!isAndroidApp() && 'serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     navigator.serviceWorker.register(appUrl('sw.js')).catch(() => undefined);
   }
 }
